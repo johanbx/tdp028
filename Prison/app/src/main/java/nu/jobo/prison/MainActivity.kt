@@ -11,17 +11,37 @@ import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import com.google.firebase.auth.FirebaseAuth
 import java.util.*
+import com.facebook.FacebookSdk;
+import com.google.firebase.auth.FirebaseUser
+import com.firebase.ui.auth.AuthUI
+import java.util.Arrays.asList
+import com.firebase.ui.auth.IdpResponse
+import android.content.Intent
+import android.support.annotation.NonNull
+import com.google.android.gms.tasks.OnCompleteListener
+import com.google.android.gms.tasks.Task
+
 
 class MainActivity : Activity(), SensorEventListener {
 
     companion object {
         const val POWER_FOR_ESCAPE = 10000
+        const val RC_SIGN_IN = 123
     }
+
+    // Authentication Providers
+    var providers = Arrays.asList(
+            AuthUI.IdpConfig.EmailBuilder().build(),
+            AuthUI.IdpConfig.GoogleBuilder().build(),
+            AuthUI.IdpConfig.FacebookBuilder().build())
+
 
     var running = false
     var sensorManager:SensorManager? = null
 
+    lateinit var mAuth: FirebaseAuth
     lateinit var statusImage: ImageView
     lateinit var pushUpCounter: TextView
     lateinit var sitUpCounter: TextView
@@ -32,9 +52,60 @@ class MainActivity : Activity(), SensorEventListener {
     fun ClosedRange<Int>.random() =
             Random().nextInt(endInclusive - start) +  start
 
+    public override fun onStart() {
+        super.onStart()
+        // Check if user is signed in (non-null) and update UI accordingly.
+        val currentUser = mAuth.currentUser
+
+        if (currentUser == null) {
+            Toast.makeText(this, "Trying to Login", Toast.LENGTH_SHORT).show()
+            // Create and launch sign-in intent
+            startActivityForResult(
+                AuthUI.getInstance()
+                    .createSignInIntentBuilder()
+                    .setAvailableProviders(providers)
+                    .build(),
+                RC_SIGN_IN)
+        } else {
+            Toast.makeText(this, "Already Logged in", Toast.LENGTH_SHORT).show()
+            logout()
+        }
+    }
+
+    fun logout() {
+        AuthUI.getInstance()
+            .signOut(this)
+            .addOnCompleteListener {
+                Toast.makeText(this, "You were logged out!", Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode == RC_SIGN_IN) {
+            val response = IdpResponse.fromResultIntent(data)
+
+            if (resultCode == Activity.RESULT_OK) {
+                // Successfully signed in
+                val user = FirebaseAuth.getInstance().currentUser
+                Toast.makeText(this, "Login Success", Toast.LENGTH_SHORT).show()
+                // ...
+            } else {
+                // Sign in failed. If response is null the user canceled the
+                // sign-in flow using the back button. Otherwise check
+                // response.getError().getErrorCode() and handle the error.
+                // ...
+                Toast.makeText(this, "Login Failed", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        mAuth = FirebaseAuth.getInstance()
 
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
 
@@ -52,7 +123,7 @@ class MainActivity : Activity(), SensorEventListener {
 
     fun eventTryEscape(view: View) {
         val currentPower = powerCounter.text.toString().toInt()
-        val powerToEscape = MainActivity.POWER_FOR_ESCAPE
+        val powerToEscape = POWER_FOR_ESCAPE
 
         if (
                 currentPower >= powerToEscape ||

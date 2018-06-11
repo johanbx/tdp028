@@ -1,0 +1,59 @@
+{
+  "project_info": {
+    "project_number": "763032384550",
+    "firebase_url": "https://prison-c3a0b.firebaseio.com",
+    "project_id": "prison-c3a0b",
+    "storage_bucket": "prison-c3a0b.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:763032384550:android:2754a505ac8cdc43",
+        "android_client_info": {
+          "package_name": "nu.jobo.prison"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "763032384550-9e8er1gg9ikbh7ufhd5lemcae5qi07a6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "nu.jobo.prison",
+            "certificate_hash": "e88036032db95060fcaa4a89d1713badbdfbe628"
+          }
+        },
+        {
+          "client_id": "763032384550-43o2d53ai17svvonjfnkq7225oegljac.apps.googleusercontent.com",
+          "client_type": 3
+        },
+        {
+          "client_id": "763032384550-43o2d53ai17svvonjfnkq7225oegljac.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDRQ6OQzCNXvisLbIJ4ihFzfcopfuMUb4k"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "763032384550-43o2d53ai17svvonjfnkq7225oegljac.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
