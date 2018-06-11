@@ -8,107 +8,14 @@
     tools:context=".MainActivity">
 
     <ImageView
-        android:id="@+id/image_prisoner_status"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:contentDescription="@string/prison_bars"
-        android:scaleType="centerCrop"
-        android:src="@drawable/bars"
-        app:layout_constraintBottom_toTopOf="@+id/image_toolbar_background"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/image_power_background" />
-
-    <ImageView
         android:id="@+id/image_power_background"
         android:layout_width="0dp"
         android:layout_height="49dp"
         android:contentDescription="@string/mockup_shape"
-        android:src="@color/colorAccent"
+        android:src="@color/colorCounterPrimary"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
-
-    <ImageView
-        android:id="@+id/image_toolbar_background"
-        android:layout_width="0dp"
-        android:layout_height="221dp"
-        android:contentDescription="@string/mockup_shape"
-        android:src="@color/colorPrisonLight"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="@+id/image_prisoner_status"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="@+id/image_prisoner_status"
-        app:layout_constraintTop_toTopOf="@+id/textView" />
-
-    <Button
-        android:id="@+id/button_sit_up"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        android:layout_marginEnd="16dp"
-        android:onClick="prisonerSitUp"
-        android:text="@string/button_sit_up"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-    <TextView
-        android:id="@+id/text_total_sit_ups"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="16dp"
-        android:layout_marginStart="16dp"
-        android:ems="10"
-        android:text="@string/zero"
-        android:textAlignment="center"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        app:layout_constraintBaseline_toBaselineOf="@+id/button_sit_up"
-        app:layout_constraintEnd_toStartOf="@+id/button_sit_up"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <Button
-        android:id="@+id/button_push_up"
-        android:layout_width="wrap_content"
-        android:layout_height="0dp"
-        android:layout_marginBottom="16dp"
-        android:layout_marginEnd="16dp"
-        android:onClick="prisonerPushUp"
-        android:text="@string/button_push_up"
-        app:layout_constraintBottom_toTopOf="@+id/button_sit_up"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-    <TextView
-        android:id="@+id/text_total_push_ups"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="16dp"
-        android:layout_marginStart="16dp"
-        android:ems="10"
-        android:text="@string/zero"
-        android:textAlignment="center"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        app:layout_constraintBaseline_toBaselineOf="@+id/button_push_up"
-        app:layout_constraintEnd_toStartOf="@+id/button_push_up"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <TextView
-        android:id="@+id/textView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginStart="16dp"
-        android:text="@string/zero_steps"
-        android:textAlignment="center"
-        android:textColor="@color/white"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toTopOf="@+id/button_push_up"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
 
     <TextView
         android:id="@+id/power"
@@ -118,6 +25,7 @@
         android:layout_marginEnd="8dp"
         android:layout_marginTop="8dp"
         android:text="@string/zero"
+        android:textAlignment="textEnd"
         android:textAllCaps="false"
         android:textColor="@color/white"
         android:textSize="24sp"
@@ -128,7 +36,7 @@
         app:layout_constraintVertical_bias="1.0" />
 
     <TextView
-        android:id="@+id/textView2"
+        android:id="@+id/power_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
@@ -143,14 +51,164 @@
         app:layout_constraintTop_toTopOf="@+id/image_power_background"
         app:layout_constraintVertical_bias="1.0" />
 
-    <TableLayout
-        android:id="@+id/tableLayout"
-        android:layout_width="321dp"
-        android:layout_height="210dp"
+    <ImageView
+        android:id="@+id/image_steps_background"
+        android:layout_width="0dp"
+        android:layout_height="33dp"
+        android:contentDescription="@string/mockup_shape"
+        android:src="@color/colorCounterSecondary"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/image_power_background" />
+
+    <TextView
+        android:id="@+id/steps"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginTop="8dp"
+        android:text="@string/zero"
+        android:textAlignment="textEnd"
+        android:textColor="@color/white"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@+id/image_steps_background"
+        app:layout_constraintEnd_toEndOf="@+id/image_steps_background"
+        app:layout_constraintTop_toTopOf="@+id/image_steps_background" />
+
+    <TextView
+        android:id="@+id/steps_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
+        android:text="STEPS"
+        android:textColor="@color/white"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@+id/image_steps_background"
+        app:layout_constraintStart_toStartOf="@+id/image_steps_background"
+        app:layout_constraintTop_toTopOf="@+id/image_steps_background" />
+
+    <ImageView
+        android:id="@+id/image_sit_ups_background"
+        android:layout_width="0dp"
+        android:layout_height="33dp"
+        android:contentDescription="@string/mockup_shape"
+        android:src="@color/colorCounterAlternative"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/image_power_background">
+        app:layout_constraintTop_toBottomOf="@+id/image_steps_background" />
+
+    <TextView
+        android:id="@+id/sit_ups_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:text="SIT UPS"
+        android:textColor="@color/white"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@+id/image_sit_ups_background"
+        app:layout_constraintStart_toStartOf="@+id/image_sit_ups_background"
+        app:layout_constraintTop_toTopOf="@+id/image_sit_ups_background" />
+
+    <TextView
+        android:id="@+id/text_total_sit_ups"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginTop="8dp"
+        android:text="@string/zero"
+        android:textAlignment="textEnd"
+        android:textColor="@color/white"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@+id/image_sit_ups_background"
+        app:layout_constraintEnd_toEndOf="@+id/image_sit_ups_background"
+        app:layout_constraintTop_toTopOf="@+id/image_sit_ups_background" />
+
+    <ImageView
+        android:id="@+id/image_push_ups_background"
+        android:layout_width="0dp"
+        android:layout_height="33dp"
+        android:contentDescription="@string/mockup_shape"
+        android:src="@color/colorCounterPrimary"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/image_sit_ups_background" />
+
+    <TextView
+        android:id="@+id/sit_ups_text2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:text="PUSH UPS"
+        android:textColor="@color/white"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@+id/image_push_ups_background"
+        app:layout_constraintStart_toStartOf="@+id/image_push_ups_background"
+        app:layout_constraintTop_toTopOf="@+id/image_push_ups_background" />
+
+    <TextView
+        android:id="@+id/text_total_push_ups"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginTop="8dp"
+        android:text="@string/zero"
+        android:textAlignment="center"
+        android:textColor="@color/white"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@+id/image_push_ups_background"
+        app:layout_constraintEnd_toEndOf="@+id/image_push_ups_background"
+        app:layout_constraintTop_toTopOf="@+id/image_push_ups_background" />
+
+    <ImageView
+        android:id="@+id/image_prisoner_status"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:contentDescription="@string/prison_bars"
+        android:scaleType="centerCrop"
+        android:src="@drawable/bars"
+        app:layout_constraintBottom_toTopOf="@+id/image_toolbar_background"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/image_push_ups_background" />
+
+    <ImageView
+        android:id="@+id/image_toolbar_background"
+        android:layout_width="0dp"
+        android:layout_height="163dp"
+        android:contentDescription="@string/mockup_shape"
+        android:src="@color/colorPrisonLight"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@+id/image_prisoner_status"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="@+id/image_prisoner_status" />
+
+    <TableLayout
+        android:id="@+id/tableLayout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        app:layout_constraintBottom_toBottomOf="@+id/image_toolbar_background"
+        app:layout_constraintEnd_toEndOf="@+id/image_toolbar_background"
+        app:layout_constraintStart_toStartOf="@+id/image_toolbar_background"
+        app:layout_constraintTop_toTopOf="@+id/image_toolbar_background">
 
         <TableRow
             android:layout_width="match_parent"
@@ -165,6 +223,12 @@
                 android:id="@+id/button"
                 android:onClick="eventEscaped"
                 android:text="Escaped" />
+
+            <Button
+                android:id="@+id/button_push_up"
+                android:layout_width="wrap_content"
+                android:onClick="prisonerPushUp"
+                android:text="@string/button_push_up" />
 
         </TableRow>
 
@@ -181,6 +245,11 @@
                 android:id="@+id/button7"
                 android:onClick="eventPraiseTheSun"
                 android:text="Praise The Sun" />
+
+            <Button
+                android:id="@+id/button_sit_up"
+                android:onClick="prisonerSitUp"
+                android:text="@string/button_sit_up" />
         </TableRow>
 
         <TableRow

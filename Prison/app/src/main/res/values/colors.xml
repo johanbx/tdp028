@@ -4,6 +4,10 @@
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#ff4081</color>
 
+    <color name="colorCounterPrimary">#ff4081</color>
+    <color name="colorCounterSecondary">#ff7ba8</color>
+    <color name="colorCounterAlternative">#c20042</color>
+
     <color name="colorPrisonPrimary">#424242</color>
     <color name="colorPrisonLight">#9e9e9e</color>
     <color name="white">#ffffff</color>
