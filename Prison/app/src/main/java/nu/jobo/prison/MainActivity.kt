@@ -3,17 +3,21 @@ package nu.jobo.prison
 import android.app.Activity
 import android.os.Bundle
 import android.view.View
+import android.widget.Button
 import android.widget.ImageView
+import android.widget.TextView
 
 class MainActivity : Activity() {
 
     lateinit var statusImage: ImageView
+    lateinit var pushUpCounter: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         statusImage = findViewById<ImageView>(R.id.image_prisoner_status)
+        pushUpCounter = findViewById<Button>(R.id.text_total_push_ups)
     }
 
     fun eventDied(view: View) {
@@ -44,5 +48,14 @@ class MainActivity : Activity() {
     fun eventWon(view: View) {
         statusImage.setImageResource(R.drawable.free)
         setTitle(R.string.prisoner_status_free)
+    }
+
+    fun prisonerPushUp(view: View) {
+        var counter: Int? = pushUpCounter.text.toString().toIntOrNull()
+        if (counter == null) {
+            counter = 0
+        }
+        counter = counter.inc()
+        pushUpCounter.text = counter.toString()
     }
 }
