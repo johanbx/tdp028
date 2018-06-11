@@ -11,6 +11,7 @@ class MainActivity : Activity() {
 
     lateinit var statusImage: ImageView
     lateinit var pushUpCounter: TextView
+    lateinit var sitUpCounter: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -18,6 +19,7 @@ class MainActivity : Activity() {
 
         statusImage = findViewById<ImageView>(R.id.image_prisoner_status)
         pushUpCounter = findViewById<Button>(R.id.text_total_push_ups)
+        sitUpCounter = findViewById<Button>(R.id.text_total_sit_ups)
     }
 
     fun eventDied(view: View) {
@@ -57,5 +59,14 @@ class MainActivity : Activity() {
         }
         counter = counter.inc()
         pushUpCounter.text = counter.toString()
+    }
+
+    fun prisonerSitUp(view: View) {
+        var counter: Int? = sitUpCounter.text.toString().toIntOrNull()
+        if (counter == null) {
+            counter = 0
+        }
+        counter = counter.inc()
+        sitUpCounter.text = counter.toString()
     }
 }
