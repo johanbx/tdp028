@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">Prison</string>
+    <string name="prison_bars">Prison Bars</string>
+    <string name="button_sit_up">Sit Up</string>
+    <string name="button_push_up">Push Up</string>
+    <string name="zero">0</string>
+    <string name="zero_power">0 POWER</string>
+    <string name="zero_steps">0 STEPS</string>
+    <string name="mockup_shape">Mockup for design</string>
+    <string name="prisoner_status_free">OMG You Are Free! Game Over.</string>
+    <string name="prisoner_status_escaping">You Escaped! RUN!!</string>
+    <string name="prisoner_status_jail">You Are Currently In Jail</string>
+    <string name="prisoner_status_praise_the_sun">PRAISE THE SUN</string>
+    <string name="prisoner_status_killed_by_gods">The Gods Have Killed You. Game Over.</string>
+</resources>
