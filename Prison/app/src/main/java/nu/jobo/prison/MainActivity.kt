@@ -3,23 +3,29 @@ package nu.jobo.prison
 import android.app.Activity
 import android.os.Bundle
 import android.view.View
-import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
+import java.util.*
 
 class MainActivity : Activity() {
 
     lateinit var statusImage: ImageView
     lateinit var pushUpCounter: TextView
     lateinit var sitUpCounter: TextView
+    lateinit var powerCounter: TextView
+
+    // Source: https://stackoverflow.com/questions/45685026/how-can-i-get-a-random-number-in-kotlin
+    fun ClosedRange<Int>.random() =
+            Random().nextInt(endInclusive - start) +  start
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        statusImage = findViewById<ImageView>(R.id.image_prisoner_status)
-        pushUpCounter = findViewById<Button>(R.id.text_total_push_ups)
-        sitUpCounter = findViewById<Button>(R.id.text_total_sit_ups)
+        statusImage = findViewById(R.id.image_prisoner_status)
+        pushUpCounter = findViewById(R.id.text_total_push_ups)
+        sitUpCounter = findViewById(R.id.text_total_sit_ups)
+        powerCounter = findViewById(R.id.power)
     }
 
     fun eventDied(view: View) {
@@ -52,21 +58,29 @@ class MainActivity : Activity() {
         setTitle(R.string.prisoner_status_free)
     }
 
+    private fun powerRandomRangeIncrease(from: Int, to: Int) {
+        powerCounter.text = powerCounter.text
+                .toString()
+                .toInt()
+                .plus((from..to).random())
+                .toString()
+    }
+
     fun prisonerPushUp(view: View) {
-        var counter: Int? = pushUpCounter.text.toString().toIntOrNull()
-        if (counter == null) {
-            counter = 0
-        }
-        counter = counter.inc()
-        pushUpCounter.text = counter.toString()
+        pushUpCounter.text = pushUpCounter.text
+                .toString()
+                .toInt()
+                .inc()
+                .toString()
+        powerRandomRangeIncrease(10, 20)
     }
 
     fun prisonerSitUp(view: View) {
-        var counter: Int? = sitUpCounter.text.toString().toIntOrNull()
-        if (counter == null) {
-            counter = 0
-        }
-        counter = counter.inc()
-        sitUpCounter.text = counter.toString()
+        sitUpCounter.text = sitUpCounter.text
+                .toString()
+                .toInt()
+                .inc()
+                .toString()
+        powerRandomRangeIncrease(10, 20)
     }
 }
