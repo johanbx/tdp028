@@ -39,7 +39,7 @@ class MainActivity : Activity() {
     }
 
     fun eventGodKill(view: View) {
-        statusImage.setImageResource(R.drawable.died)
+        statusImage.setImageResource(R.drawable.godkill)
         setTitle(R.string.prisoner_status_killed_by_gods)
     }
 
