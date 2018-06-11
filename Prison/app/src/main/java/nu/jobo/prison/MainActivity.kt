@@ -67,6 +67,7 @@ class MainActivity : Activity(), SensorEventListener {
     private fun prisonerFailedEscape() {
         statusImage.setImageResource(R.drawable.escape_failed)
         setTitle(R.string.prisoner_status_failed_escape)
+        powerCounter.text = "0"
     }
 
     private fun prisonerEscaped() {
