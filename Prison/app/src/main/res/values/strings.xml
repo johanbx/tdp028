@@ -13,4 +13,5 @@
     <string name="prisoner_status_praise_the_sun">PRAISE THE SUN</string>
     <string name="prisoner_status_killed_by_gods">The Gods Have Killed You. Game Over.</string>
     <string name="prisoner_status_died">You Died. Game Over.</string>
+    <string name="prisoner_status_failed_escape">OH NO! Escape Failed = Back To Prison</string>
 </resources>

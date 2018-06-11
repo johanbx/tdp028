@@ -15,6 +15,10 @@ import java.util.*
 
 class MainActivity : Activity(), SensorEventListener {
 
+    companion object {
+        const val POWER_FOR_ESCAPE = 10000
+    }
+
     var running = false
     var sensorManager:SensorManager? = null
 
@@ -46,7 +50,26 @@ class MainActivity : Activity(), SensorEventListener {
         setTitle(R.string.prisoner_status_died)
     }
 
-    fun eventEscaped(view: View) {
+    fun eventTryEscape(view: View) {
+        val currentPower = powerCounter.text.toString().toInt()
+        val powerToEscape = MainActivity.POWER_FOR_ESCAPE
+
+        if (
+                currentPower >= powerToEscape ||
+                currentPower > (0..powerToEscape).random()) {
+            prisonerEscaped()
+        }
+        else {
+            prisonerFailedEscape()
+        }
+    }
+
+    private fun prisonerFailedEscape() {
+        statusImage.setImageResource(R.drawable.escape_failed)
+        setTitle(R.string.prisoner_status_failed_escape)
+    }
+
+    private fun prisonerEscaped() {
         statusImage.setImageResource(R.drawable.escaped)
         setTitle(R.string.prisoner_status_escaping)
     }

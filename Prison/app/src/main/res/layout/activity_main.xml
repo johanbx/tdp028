@@ -221,8 +221,8 @@
 
             <Button
                 android:id="@+id/button"
-                android:onClick="eventEscaped"
-                android:text="Escaped" />
+                android:onClick="eventTryEscape"
+                android:text="Try Escape" />
 
             <Button
                 android:id="@+id/button_push_up"
