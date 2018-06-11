@@ -13,7 +13,7 @@
         android:layout_height="0dp"
         android:contentDescription="@string/prison_bars"
         android:scaleType="centerCrop"
-        android:src="@drawable/prison_bars"
+        android:src="@drawable/bars"
         app:layout_constraintBottom_toTopOf="@+id/image_toolbar_background"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
@@ -125,5 +125,62 @@
         app:layout_constraintEnd_toEndOf="@+id/image_power_background"
         app:layout_constraintStart_toStartOf="@+id/image_power_background"
         app:layout_constraintTop_toTopOf="@+id/image_power_background" />
+
+    <TableLayout
+        android:layout_width="321dp"
+        android:layout_height="210dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/image_power_background">
+
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <Button
+                android:id="@+id/button5"
+                android:onClick="eventDied"
+                android:text="Died" />
+
+            <Button
+                android:id="@+id/button"
+                android:onClick="eventEscaped"
+                android:text="Escaped" />
+
+        </TableRow>
+
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="62dp">
+
+            <Button
+                android:id="@+id/button2"
+                android:onClick="eventGodKill"
+                android:text="God Kill" />
+
+            <Button
+                android:id="@+id/button7"
+                android:onClick="eventPraiseTheSun"
+                android:text="Praise The Sun" />
+        </TableRow>
+
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="55dp">
+
+            <Button
+                android:id="@+id/button4"
+                android:onClick="eventCaptured"
+                android:text="Captured" />
+
+            <Button
+                android:id="@+id/button6"
+                android:onClick="eventWon"
+                android:text="Won" />
+
+        </TableRow>
+
+    </TableLayout>
 
 </android.support.constraint.ConstraintLayout>
