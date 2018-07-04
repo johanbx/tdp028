@@ -167,15 +167,25 @@ class MainActivity : Activity(), SensorEventListener {
         setTitle(R.string.prisoner_status_free)
     }
 
-    fun logoutFromButton(view: View) {
+    // Temporary stuff
+    fun tempLogout(view: View) {
         logout()
     }
 
+    fun tempAdd1000Power(view: View) {
+        powerIncrease(1000)
+    }
+    // --------------
+
     private fun powerRandomRangeIncrease(from: Int, to: Int) {
+        powerIncrease((from..to).random())
+    }
+
+    private fun powerIncrease(power: Int) {
         powerCounter.text = powerCounter.text
                 .toString()
                 .toInt()
-                .plus((from..to).random())
+                .plus(power)
                 .toString()
     }
 

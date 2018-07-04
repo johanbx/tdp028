@@ -216,6 +216,7 @@
                 <Button
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:onClick="tempAdd1000Power"
                     android:text="1000 Power" />
             </TableRow>
 
@@ -279,7 +280,7 @@
                     android:id="@+id/logoutButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:onClick="logoutFromButton"
+                    android:onClick="tempLogout"
                     android:text="Logga ut" />
 
             </TableRow>
