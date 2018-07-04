@@ -8,20 +8,12 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Bundle
 import android.view.View
-import android.widget.ImageView
-import android.widget.TextView
-import android.widget.Toast
 import com.google.firebase.auth.FirebaseAuth
 import java.util.*
-import com.facebook.FacebookSdk;
-import com.google.firebase.auth.FirebaseUser
 import com.firebase.ui.auth.AuthUI
-import java.util.Arrays.asList
 import com.firebase.ui.auth.IdpResponse
 import android.content.Intent
-import android.support.annotation.NonNull
-import com.google.android.gms.tasks.OnCompleteListener
-import com.google.android.gms.tasks.Task
+import android.widget.*
 
 
 class MainActivity : Activity(), SensorEventListener {
@@ -110,6 +102,11 @@ class MainActivity : Activity(), SensorEventListener {
 
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
 
+        val buttons: Array<Button> = initButtons()
+
+        val buttonGridView: GridView = findViewById(R.id.ButtonGridView)
+        buttonGridView.adapter = ButtonAdapter(this, buttons)
+
         statusImage = findViewById(R.id.image_prisoner_status)
         pushUpCounter = findViewById(R.id.text_total_push_ups)
         sitUpCounter = findViewById(R.id.text_total_sit_ups)
@@ -117,12 +114,87 @@ class MainActivity : Activity(), SensorEventListener {
         stepCounter = findViewById(R.id.steps)
     }
 
-    fun eventDied(view: View) {
+    fun initButtons(): Array<Button> {
+
+        val pushUpButton: Button = Button(this)
+        pushUpButton.setText(R.string.button_push_up)
+        pushUpButton.setOnClickListener {
+            prisonerPushUp()
+        }
+
+        val sitUpButton: Button = Button(this)
+        sitUpButton.setText(R.string.button_sit_up)
+        sitUpButton.setOnClickListener {
+            prisonerSitUp()
+        }
+
+        val tempCapturedButton: Button = Button(this)
+        tempCapturedButton.setText("Captured")
+        tempCapturedButton.setOnClickListener {
+            eventCaptured()
+        }
+
+        val tempDiedButton: Button = Button(this)
+        tempDiedButton.setText("Died")
+        tempDiedButton.setOnClickListener {
+            eventDied()
+        }
+
+        val tempLogoutButton: Button = Button(this)
+        tempLogoutButton.setText("Logout")
+        tempLogoutButton.setOnClickListener {
+            logout()
+        }
+
+        val tempPraiseTheSunButton: Button = Button(this)
+        tempPraiseTheSunButton.setText("Praise Sun")
+        tempPraiseTheSunButton.setOnClickListener {
+            eventPraiseTheSun()
+        }
+
+        val tempAdd1000PowerButton: Button = Button(this)
+        tempAdd1000PowerButton.setText("+1000 Power")
+        tempAdd1000PowerButton.setOnClickListener {
+            tempAdd1000Power()
+        }
+
+        val tempGodKillButton: Button = Button(this)
+        tempGodKillButton.setText("God Kill")
+        tempGodKillButton.setOnClickListener {
+            eventGodKill()
+        }
+
+        val tryEscapeButton: Button = Button(this)
+        tryEscapeButton.setText("Try Escape")
+        tryEscapeButton.setOnClickListener {
+            eventTryEscape()
+        }
+
+        val tempWonButton: Button = Button(this)
+        tempWonButton.setText("Win")
+        tempWonButton.setOnClickListener {
+            eventWon()
+        }
+
+        return arrayOf<Button>(
+                pushUpButton,
+                sitUpButton,
+                tempCapturedButton,
+                tempDiedButton,
+                tempLogoutButton,
+                tempPraiseTheSunButton,
+                tempAdd1000PowerButton,
+                tempGodKillButton,
+                tryEscapeButton,
+                tempWonButton)
+    }
+
+    fun eventDied() {
         statusImage.setImageResource(R.drawable.died)
         setTitle(R.string.prisoner_status_died)
     }
 
-    fun eventTryEscape(view: View) {
+    fun eventTryEscape() {
         val currentPower = powerCounter.text.toString().toInt()
         val powerToEscape = POWER_FOR_ESCAPE
 
@@ -147,22 +219,22 @@ class MainActivity : Activity(), SensorEventListener {
         setTitle(R.string.prisoner_status_escaping)
     }
 
-    fun eventGodKill(view: View) {
+    fun eventGodKill() {
         statusImage.setImageResource(R.drawable.godkill)
         setTitle(R.string.prisoner_status_killed_by_gods)
     }
 
-    fun eventCaptured(view: View) {
+    fun eventCaptured() {
         statusImage.setImageResource(R.drawable.bars)
         setTitle(R.string.prisoner_status_captured)
     }
 
-    fun eventPraiseTheSun(view: View) {
+    fun eventPraiseTheSun() {
         statusImage.setImageResource(R.drawable.sunpraise)
         setTitle(R.string.prisoner_status_praise_the_sun)
     }
 
-    fun eventWon(view: View) {
+    fun eventWon() {
         statusImage.setImageResource(R.drawable.free)
         setTitle(R.string.prisoner_status_free)
     }
@@ -172,7 +244,7 @@ class MainActivity : Activity(), SensorEventListener {
         logout()
     }
 
-    fun tempAdd1000Power(view: View) {
+    fun tempAdd1000Power() {
         powerIncrease(1000)
     }
     // --------------
@@ -189,7 +261,7 @@ class MainActivity : Activity(), SensorEventListener {
                 .toString()
     }
 
-    fun prisonerPushUp(view: View) {
+    fun prisonerPushUp() {
         pushUpCounter.text = pushUpCounter.text
                 .toString()
                 .toInt()
@@ -198,7 +270,7 @@ class MainActivity : Activity(), SensorEventListener {
         powerRandomRangeIncrease(10, 20)
     }
 
-    fun prisonerSitUp(view: View) {
+    fun prisonerSitUp() {
         sitUpCounter.text = sitUpCounter.text
                 .toString()
                 .toInt()
