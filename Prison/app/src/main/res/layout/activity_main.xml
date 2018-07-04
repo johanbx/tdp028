@@ -180,101 +180,111 @@
         android:contentDescription="@string/prison_bars"
         android:scaleType="centerCrop"
         android:src="@drawable/bars"
-        app:layout_constraintBottom_toTopOf="@+id/image_toolbar_background"
+        app:layout_constraintBottom_toTopOf="@+id/frameLayout"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/image_push_ups_background" />
 
-    <ImageView
-        android:id="@+id/image_toolbar_background"
-        android:layout_width="0dp"
-        android:layout_height="163dp"
-        android:contentDescription="@string/mockup_shape"
-        android:src="@color/colorPrisonLight"
+    <FrameLayout
+        android:id="@+id/frameLayout"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:background="@color/colorPrisonLight"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="@+id/image_prisoner_status"
         app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="@+id/image_prisoner_status" />
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent">
 
-    <TableLayout
-        android:id="@+id/tableLayout"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        app:layout_constraintBottom_toBottomOf="@+id/image_toolbar_background"
-        app:layout_constraintEnd_toEndOf="@+id/image_toolbar_background"
-        app:layout_constraintStart_toStartOf="@+id/image_toolbar_background"
-        app:layout_constraintTop_toTopOf="@+id/image_toolbar_background">
-
-        <TableRow
+        <TableLayout
+            android:id="@+id/tableLayout"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="match_parent"
+            android:layout_marginBottom="0dp"
+            android:layout_marginEnd="0dp"
+            android:layout_marginStart="0dp"
+            android:layout_marginTop="0dp"
+            app:layout_constraintBottom_toBottomOf="@+id/image_toolbar_background"
+            app:layout_constraintEnd_toEndOf="@+id/image_toolbar_background"
+            app:layout_constraintStart_toStartOf="@+id/image_toolbar_background"
+            app:layout_constraintTop_toTopOf="@+id/image_toolbar_background">
 
-            <Button
-                android:id="@+id/button5"
-                android:onClick="eventDied"
-                android:text="Died" />
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
 
-            <Button
-                android:id="@+id/button"
-                android:onClick="eventTryEscape"
-                android:text="Try Escape" />
+                <Button
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="1000 Power" />
+            </TableRow>
 
-            <Button
-                android:id="@+id/button_push_up"
-                android:layout_width="wrap_content"
-                android:onClick="prisonerPushUp"
-                android:text="@string/button_push_up" />
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
 
-        </TableRow>
+                <Button
+                    android:id="@+id/button5"
+                    android:onClick="eventDied"
+                    android:text="Died" />
 
-        <TableRow
-            android:layout_width="match_parent"
-            android:layout_height="62dp">
+                <Button
+                    android:id="@+id/button"
+                    android:onClick="eventTryEscape"
+                    android:text="Try Escape" />
 
-            <Button
-                android:id="@+id/button2"
-                android:onClick="eventGodKill"
-                android:text="God Kill" />
+                <Button
+                    android:id="@+id/button_push_up"
+                    android:layout_width="wrap_content"
+                    android:onClick="prisonerPushUp"
+                    android:text="@string/button_push_up" />
 
-            <Button
-                android:id="@+id/button7"
-                android:onClick="eventPraiseTheSun"
-                android:text="Praise The Sun" />
+            </TableRow>
 
-            <Button
-                android:id="@+id/button_sit_up"
-                android:onClick="prisonerSitUp"
-                android:text="@string/button_sit_up" />
-        </TableRow>
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="62dp">
 
-        <TableRow
-            android:layout_width="match_parent"
-            android:layout_height="55dp">
+                <Button
+                    android:id="@+id/button2"
+                    android:onClick="eventGodKill"
+                    android:text="God Kill" />
 
-            <Button
-                android:id="@+id/button4"
-                android:onClick="eventCaptured"
-                android:text="Captured" />
+                <Button
+                    android:id="@+id/button7"
+                    android:onClick="eventPraiseTheSun"
+                    android:text="Praise The Sun" />
 
-            <Button
-                android:id="@+id/button6"
-                android:onClick="eventWon"
-                android:text="Won" />
+                <Button
+                    android:id="@+id/button_sit_up"
+                    android:onClick="prisonerSitUp"
+                    android:text="@string/button_sit_up" />
+            </TableRow>
 
-            <Button
-                android:id="@+id/logoutButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:onClick="logoutFromButton"
-                android:text="Logga ut" />
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="55dp">
 
-        </TableRow>
+                <Button
+                    android:id="@+id/button4"
+                    android:onClick="eventCaptured"
+                    android:text="Captured" />
 
-    </TableLayout>
+                <Button
+                    android:id="@+id/button6"
+                    android:onClick="eventWon"
+                    android:text="Won" />
+
+                <Button
+                    android:id="@+id/logoutButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:onClick="logoutFromButton"
+                    android:text="Logga ut" />
+
+            </TableRow>
+
+        </TableLayout>
+    </FrameLayout>
 
 </android.support.constraint.ConstraintLayout>
