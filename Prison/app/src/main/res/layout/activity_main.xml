@@ -266,6 +266,13 @@
                 android:onClick="eventWon"
                 android:text="Won" />
 
+            <Button
+                android:id="@+id/logoutButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:onClick="logoutFromButton"
+                android:text="Logga ut" />
+
         </TableRow>
 
     </TableLayout>

@@ -66,17 +66,18 @@ class MainActivity : Activity(), SensorEventListener {
                     .setAvailableProviders(providers)
                     .build(),
                 RC_SIGN_IN)
-        } else {
-            Toast.makeText(this, "Already Logged in", Toast.LENGTH_SHORT).show()
-            logout()
         }
+
+        setTitle(R.string.prisoner_status_captured)
     }
 
-    fun logout() {
+    private fun logout() {
         AuthUI.getInstance()
             .signOut(this)
             .addOnCompleteListener {
                 Toast.makeText(this, "You were logged out!", Toast.LENGTH_SHORT).show()
+                finish()
+                startActivity(intent)
             }
     }
 
@@ -164,6 +165,10 @@ class MainActivity : Activity(), SensorEventListener {
     fun eventWon(view: View) {
         statusImage.setImageResource(R.drawable.free)
         setTitle(R.string.prisoner_status_free)
+    }
+
+    fun logoutFromButton(view: View) {
+        logout()
     }
 
     private fun powerRandomRangeIncrease(from: Int, to: Int) {
