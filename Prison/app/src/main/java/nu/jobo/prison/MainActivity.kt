@@ -1,14 +1,12 @@
 package nu.jobo.prison
 
 import android.app.Activity
-import android.app.Notification
 import android.content.Context
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Bundle
-import android.view.View
 import com.google.firebase.auth.FirebaseAuth
 import java.util.*
 import com.firebase.ui.auth.AuthUI
@@ -20,6 +18,8 @@ import android.app.NotificationManager
 import android.app.NotificationChannel
 import android.os.Build
 import android.app.PendingIntent
+import android.os.Parcelable
+import android.os.PersistableBundle
 import android.support.v4.app.NotificationManagerCompat
 
 
@@ -29,6 +29,11 @@ class MainActivity : Activity(), SensorEventListener {
         const val POWER_FOR_ESCAPE = 10000
         const val RC_SIGN_IN = 123
         const val CHANNEL_ID = "CHANNEL_ID"
+
+        const val POWER_KEY = "POWER_KEY"
+        const val STEPS_KEY = "STEPS_KEY"
+        const val SIT_UPS_KEY = "SIT_UPS_KEY"
+        const val PUSH_UPS_KEY = "PUSH_UPS_KEY"
     }
 
     // Authentication Providers (login ui)
@@ -44,12 +49,33 @@ class MainActivity : Activity(), SensorEventListener {
     private lateinit var escapingAttemptNotificationBuilder: NotificationCompat.Builder
     private lateinit var prisonerEvents: PrisonerEvents
     private lateinit var mAuth: FirebaseAuth
-    private lateinit var stepCounter: TextView
 
+    lateinit var stepCounter: TextView
     lateinit var statusImage: ImageView
     lateinit var pushUpCounter: TextView
     lateinit var sitUpCounter: TextView
     lateinit var powerCounter: TextView
+
+    var power = 0
+    var steps = 0
+    var sitUps = 0
+    var pushUps = 0
+
+    override fun onSaveInstanceState(outState: Bundle?) {
+        outState?.run {
+            putInt(POWER_KEY, power)
+            putInt(STEPS_KEY, steps)
+            putInt(SIT_UPS_KEY, sitUps)
+            putInt(PUSH_UPS_KEY, pushUps)
+        }
+
+        super.onSaveInstanceState(outState)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle?) {
+        extractActionCounterValuesFromSavedBundle(savedInstanceState)
+        initCounterValues()
+    }
 
     public override fun onStart() {
         super.onStart()
@@ -101,6 +127,8 @@ class MainActivity : Activity(), SensorEventListener {
         createNotificationChannel()
         initNotification()
 
+        extractActionCounterValuesFromSavedBundle(savedInstanceState)
+
         mAuth = FirebaseAuth.getInstance()
 
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
@@ -110,19 +138,40 @@ class MainActivity : Activity(), SensorEventListener {
         val buttonGridView: GridView = findViewById(R.id.ButtonGridView)
         buttonGridView.adapter = ButtonAdapter(this, buttons)
 
+        prisonerEvents = PrisonerEvents(this)
+
         statusImage = findViewById(R.id.image_prisoner_status)
         pushUpCounter = findViewById(R.id.text_total_push_ups)
         sitUpCounter = findViewById(R.id.text_total_sit_ups)
         powerCounter = findViewById(R.id.power)
         stepCounter = findViewById(R.id.steps)
 
-        prisonerEvents = PrisonerEvents(this)
+        initCounterValues()
+    }
+
+    private fun extractActionCounterValuesFromSavedBundle(savedInstanceState: Bundle?) {
+        power = savedInstanceState?.getInt(POWER_KEY) ?: 0
+        steps = savedInstanceState?.getInt(STEPS_KEY) ?: 0
+        sitUps = savedInstanceState?.getInt(SIT_UPS_KEY) ?: 0
+        pushUps = savedInstanceState?.getInt(PUSH_UPS_KEY) ?: 0
+    }
+
+    private fun initCounterValues() {
+        pushUpCounter.text = pushUps.toString()
+        sitUpCounter.text = sitUps.toString()
+        powerCounter.text = power.toString()
+        stepCounter.text = steps.toString()
     }
 
     private fun initNotification(){
         // Create an explicit intent for an Activity in your app
+        // This type of intent remembers the counter values, source:
+        // https://stackoverflow.com/questions/5502427/resume-application-and-stack-from-notification
         val intent = Intent(this, MainActivity::class.java)
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        intent.addCategory(Intent.CATEGORY_LAUNCHER)
+        intent.action = Intent.ACTION_MAIN
+
         val pendingIntent = PendingIntent.getActivity(this, 0, intent, 0)
 
         escapingAttemptNotificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID)
@@ -132,7 +181,7 @@ class MainActivity : Activity(), SensorEventListener {
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 // Set the intent that will fire when the user taps the notification
                 .setContentIntent(pendingIntent)
-                .setAutoCancel(true);
+                .setAutoCancel(true) // removes notification on tap
     }
 
     private fun createNotificationChannel() {
@@ -177,10 +226,10 @@ class MainActivity : Activity(), SensorEventListener {
     private fun initButtons(): Array<Button> {
 
         val pushUpButton: Button = simpleEventButton(
-                R.string.button_push_up, {prisonerEvents.prisonerPushUp()})
+                R.string.button_push_up, {prisonerEvents.pushUp()})
 
         val sitUpButton: Button = simpleEventButton(
-                R.string.button_sit_up, {prisonerEvents.prisonerSitUp()})
+                R.string.button_sit_up, {prisonerEvents.sitUp()})
 
         val tryEscapeButton: Button = simpleEventButton(
                 R.string.button_try_escape, {prisonerEvents.tryEscape()})
@@ -237,7 +286,7 @@ class MainActivity : Activity(), SensorEventListener {
     override fun onResume() {
         super.onResume()
         running = true
-        val stepsSensor = sensorManager?.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
+        val stepsSensor = sensorManager?.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR)
 
         if (stepsSensor == null) {
             Toast.makeText(this, "No Step Counter Sensor !", Toast.LENGTH_SHORT).show()
@@ -258,12 +307,7 @@ class MainActivity : Activity(), SensorEventListener {
     override fun onSensorChanged(event: SensorEvent?) {
         if (running) {
             if (event != null) {
-                stepCounter.text = stepCounter.text
-                        .toString()
-                        .toInt()
-                        .inc()
-                        .toString()
-                prisonerEvents.powerFromStep()
+                prisonerEvents.step()
             }
         }
     }
