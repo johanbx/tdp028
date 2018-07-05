@@ -1,5 +1,6 @@
 package nu.jobo.prison
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.hardware.Sensor
@@ -18,9 +19,17 @@ import android.app.NotificationManager
 import android.app.NotificationChannel
 import android.os.Build
 import android.app.PendingIntent
+import android.content.pm.PackageManager
 import android.os.Parcelable
 import android.os.PersistableBundle
+import android.support.v4.app.ActivityCompat
 import android.support.v4.app.NotificationManagerCompat
+import android.support.v4.content.ContextCompat
+import com.google.android.gms.location.Geofence
+import com.google.android.gms.location.GeofencingClient
+import com.google.android.gms.location.GeofencingRequest
+import com.google.android.gms.location.LocationServices
+import java.util.jar.Manifest
 
 
 class MainActivity : Activity(), SensorEventListener {
@@ -34,6 +43,14 @@ class MainActivity : Activity(), SensorEventListener {
         const val STEPS_KEY = "STEPS_KEY"
         const val SIT_UPS_KEY = "SIT_UPS_KEY"
         const val PUSH_UPS_KEY = "PUSH_UPS_KEY"
+
+        const val FENCE_KEY = "FENCE_KEY"
+        const val FENCE_LATITUDE: Double = 59.464997
+        const val FENCE_LONGITUDE: Double = 18.048519
+        const val FENCE_RADIUS_METER: Float = 100f
+        const val FENCE_EXPIRATION_MILLISECONDS: Long = 20000
+
+        const val LOCATION_PERMISSION_REQUEST_CODE = 345
     }
 
     // Authentication Providers (login ui)
@@ -46,9 +63,12 @@ class MainActivity : Activity(), SensorEventListener {
     private var running = false
     private var sensorManager:SensorManager? = null
 
+    lateinit var geofencingClient: GeofencingClient
+
     private lateinit var escapingAttemptNotificationBuilder: NotificationCompat.Builder
     private lateinit var prisonerEvents: PrisonerEvents
     private lateinit var mAuth: FirebaseAuth
+    private lateinit var fence: Geofence
 
     lateinit var stepCounter: TextView
     lateinit var statusImage: ImageView
@@ -131,6 +151,12 @@ class MainActivity : Activity(), SensorEventListener {
 
         mAuth = FirebaseAuth.getInstance()
 
+        // Require Location Permission & Setup Geofence
+        requirePermission(android.Manifest.permission.ACCESS_FINE_LOCATION,
+                LOCATION_PERMISSION_REQUEST_CODE)
+        geofencingClient = LocationServices.getGeofencingClient(this)
+        initGeofence()
+
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
 
         val buttons: Array<Button> = initButtons()
@@ -147,6 +173,100 @@ class MainActivity : Activity(), SensorEventListener {
         stepCounter = findViewById(R.id.steps)
 
         initCounterValues()
+    }
+
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>?,
+                                            grantResults: IntArray?) {
+        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
+            if (permissions?.isEmpty()!!){
+                requirePermission(android.Manifest.permission.ACCESS_FINE_LOCATION,
+                        LOCATION_PERMISSION_REQUEST_CODE)
+            } else {
+                for (i in 0 until permissions.size) {
+                    val permission = permissions[i]
+                    val grantResult = grantResults?.get(i)
+
+                    if (permission.equals(android.Manifest.permission.ACCESS_FINE_LOCATION)) {
+                        if (grantResult == PackageManager.PERMISSION_GRANTED) {
+                            Toast.makeText(applicationContext,
+                                    "success: location permission granted", Toast.LENGTH_SHORT).show()
+                            initGeofence()
+                        } else {
+                            Toast.makeText(applicationContext,
+                                    "This app require location permission", Toast.LENGTH_LONG).show()
+                            finish()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // OBS: onRequestPermissionsResult is required.
+    private fun requirePermission(permission: String, requestCode: Int) {
+        if (ContextCompat.checkSelfPermission(
+                        this,
+                        permission) != PackageManager.PERMISSION_GRANTED){
+            ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(permission),
+                    requestCode)
+        }
+    }
+
+    private fun getGeofencingRequest(): GeofencingRequest {
+        return GeofencingRequest.Builder().apply {
+            setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
+            addGeofences(listOf<Geofence>(fence))
+        }.build()
+    }
+
+    private val geofencePendingIntent: PendingIntent by lazy {
+        val intent = Intent(this, GeofenceTransitionsIntentService::class.java)
+        // We use FLAG_UPDATE_CURRENT so that we get the same pending intent back when calling
+        // addGeofences() and removeGeofences().
+        PendingIntent.getService(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun initGeofence() {
+        fence = Geofence.Builder()
+                // Set the request ID of the geofence. This is a string to identify this
+                // geofence.
+                .setRequestId(FENCE_KEY)
+
+                // Set the circular region of this geofence.
+                .setCircularRegion(
+                        FENCE_LATITUDE,
+                        FENCE_LONGITUDE,
+                        FENCE_RADIUS_METER
+                )
+
+                // Set the expiration duration of the geofence. This geofence gets automatically
+                // removed after this period of time.
+                .setExpirationDuration(FENCE_EXPIRATION_MILLISECONDS)
+
+
+                // Set the transition types of interest. Alerts are only generated for these
+                // transition. We track entry and exit transitions in this sample.
+                .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER or Geofence.GEOFENCE_TRANSITION_EXIT)
+
+                // Create the geofence.
+                .build()
+
+        geofencingClient?.addGeofences(getGeofencingRequest(), geofencePendingIntent)?.run {
+            addOnSuccessListener {
+                Toast.makeText(applicationContext, "success: Geofences added", Toast.LENGTH_SHORT).show()
+                // Geofences added
+                // ...
+            }
+            addOnFailureListener {
+                Toast.makeText(applicationContext, "failure: Geofences not added", Toast.LENGTH_SHORT).show()
+                // Failed to add geofences
+                // ...
+            }
+        }
     }
 
     private fun extractActionCounterValuesFromSavedBundle(savedInstanceState: Bundle?) {
