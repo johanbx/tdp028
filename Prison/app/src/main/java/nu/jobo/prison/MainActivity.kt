@@ -23,26 +23,24 @@ class MainActivity : Activity(), SensorEventListener {
         const val RC_SIGN_IN = 123
     }
 
-    // Authentication Providers
-    var providers = Arrays.asList(
+    // Authentication Providers (login ui)
+    private var providers = Arrays.asList(
             AuthUI.IdpConfig.EmailBuilder().build(),
             AuthUI.IdpConfig.GoogleBuilder().build(),
             AuthUI.IdpConfig.FacebookBuilder().build())
 
 
-    var running = false
-    var sensorManager:SensorManager? = null
+    private var running = false
+    private var sensorManager:SensorManager? = null
 
-    lateinit var mAuth: FirebaseAuth
+    private lateinit var prisonerEvents: PrisonerEvents
+    private lateinit var mAuth: FirebaseAuth
+    private lateinit var stepCounter: TextView
+
     lateinit var statusImage: ImageView
     lateinit var pushUpCounter: TextView
     lateinit var sitUpCounter: TextView
     lateinit var powerCounter: TextView
-    lateinit var stepCounter: TextView
-
-    // Source: https://stackoverflow.com/questions/45685026/how-can-i-get-a-random-number-in-kotlin
-    fun ClosedRange<Int>.random() =
-            Random().nextInt(endInclusive - start) +  start
 
     public override fun onStart() {
         super.onStart()
@@ -59,6 +57,8 @@ class MainActivity : Activity(), SensorEventListener {
                     .build(),
                 RC_SIGN_IN)
         }
+
+        // TODO: Fetch saved data from user in the database and fill out the fields
 
         setTitle(R.string.prisoner_status_captured)
     }
@@ -81,8 +81,9 @@ class MainActivity : Activity(), SensorEventListener {
 
             if (resultCode == Activity.RESULT_OK) {
                 // Successfully signed in
-                val user = FirebaseAuth.getInstance().currentUser
+                val currentUser = FirebaseAuth.getInstance().currentUser
                 Toast.makeText(this, "Login Success", Toast.LENGTH_SHORT).show()
+                // TODO: Load user
                 // ...
             } else {
                 // Sign in failed. If response is null the user canceled the
@@ -112,69 +113,55 @@ class MainActivity : Activity(), SensorEventListener {
         sitUpCounter = findViewById(R.id.text_total_sit_ups)
         powerCounter = findViewById(R.id.power)
         stepCounter = findViewById(R.id.steps)
+
+        prisonerEvents = PrisonerEvents(this)
     }
 
-    fun initButtons(): Array<Button> {
+    private fun simpleEventButton(resourceId: Int, function: () -> Unit): Button {
+        return simpleEventButton(resources.getString(resourceId), function)
+    }
 
-        val pushUpButton: Button = Button(this)
-        pushUpButton.setText(R.string.button_push_up)
-        pushUpButton.setOnClickListener {
-            prisonerPushUp()
+    private fun simpleEventButton(text: String, function: () -> Unit): Button {
+        val button = Button(this)
+        button.text = text
+        button.setOnClickListener {
+            function()
         }
+        return button
+    }
 
-        val sitUpButton: Button = Button(this)
-        sitUpButton.setText(R.string.button_sit_up)
-        sitUpButton.setOnClickListener {
-            prisonerSitUp()
-        }
+    private fun initButtons(): Array<Button> {
 
-        val tempCapturedButton: Button = Button(this)
-        tempCapturedButton.setText("Captured")
-        tempCapturedButton.setOnClickListener {
-            eventCaptured()
-        }
+        val pushUpButton: Button = simpleEventButton(
+                R.string.button_push_up, {prisonerEvents.prisonerPushUp()})
 
-        val tempDiedButton: Button = Button(this)
-        tempDiedButton.setText("Died")
-        tempDiedButton.setOnClickListener {
-            eventDied()
-        }
+        val sitUpButton: Button = simpleEventButton(
+                R.string.button_sit_up, {prisonerEvents.prisonerSitUp()})
 
-        val tempLogoutButton: Button = Button(this)
-        tempLogoutButton.setText("Logout")
-        tempLogoutButton.setOnClickListener {
-            logout()
-        }
+        val tryEscapeButton: Button = simpleEventButton(
+                R.string.button_try_escape, {prisonerEvents.tryEscape()})
 
-        val tempPraiseTheSunButton: Button = Button(this)
-        tempPraiseTheSunButton.setText("Praise Sun")
-        tempPraiseTheSunButton.setOnClickListener {
-            eventPraiseTheSun()
-        }
+        /* Temporary Buttons */
+        val tempCapturedButton: Button = simpleEventButton(
+                "Captured", {prisonerEvents.eventCaptured()})
 
-        val tempAdd1000PowerButton: Button = Button(this)
-        tempAdd1000PowerButton.setText("+1000 Power")
-        tempAdd1000PowerButton.setOnClickListener {
-            tempAdd1000Power()
-        }
+        val tempDiedButton: Button = simpleEventButton(
+                "Died", {prisonerEvents.died()})
 
-        val tempGodKillButton: Button = Button(this)
-        tempGodKillButton.setText("God Kill")
-        tempGodKillButton.setOnClickListener {
-            eventGodKill()
-        }
+        val tempLogoutButton: Button = simpleEventButton(
+                "Logout", {logout()})
 
-        val tryEscapeButton: Button = Button(this)
-        tryEscapeButton.setText("Try Escape")
-        tryEscapeButton.setOnClickListener {
-            eventTryEscape()
-        }
+        val tempPraiseTheSunButton: Button = simpleEventButton(
+                "Praise Sun", {prisonerEvents.eventPraiseTheSun()})
 
-        val tempWonButton: Button = Button(this)
-        tempWonButton.setText("Win")
-        tempWonButton.setOnClickListener {
-            eventWon()
-        }
+        val tempAdd1000PowerButton: Button = simpleEventButton(
+                "+1000 Power", {prisonerEvents.tempAdd1000Power()})
+
+        val tempGodKillButton: Button = simpleEventButton(
+                "God Kill", {prisonerEvents.eventGodKill()})
+
+        val tempWonButton: Button = simpleEventButton(
+                "Win", {prisonerEvents.eventWon()})
 
         return arrayOf<Button>(
                 pushUpButton,
@@ -189,101 +176,17 @@ class MainActivity : Activity(), SensorEventListener {
                 tempWonButton)
     }
 
-    fun eventDied() {
-        statusImage.setImageResource(R.drawable.died)
-        setTitle(R.string.prisoner_status_died)
-    }
-
-    fun eventTryEscape() {
-        val currentPower = powerCounter.text.toString().toInt()
-        val powerToEscape = POWER_FOR_ESCAPE
-
-        if (
-                currentPower >= powerToEscape ||
-                currentPower > (0..powerToEscape).random()) {
-            prisonerEscaped()
-        }
-        else {
-            prisonerFailedEscape()
-        }
-    }
-
-    private fun prisonerFailedEscape() {
-        statusImage.setImageResource(R.drawable.escape_failed)
-        setTitle(R.string.prisoner_status_failed_escape)
-        powerCounter.text = "0"
-    }
-
-    private fun prisonerEscaped() {
-        statusImage.setImageResource(R.drawable.escaped)
-        setTitle(R.string.prisoner_status_escaping)
-    }
-
-    fun eventGodKill() {
-        statusImage.setImageResource(R.drawable.godkill)
-        setTitle(R.string.prisoner_status_killed_by_gods)
-    }
-
-    fun eventCaptured() {
-        statusImage.setImageResource(R.drawable.bars)
-        setTitle(R.string.prisoner_status_captured)
-    }
-
-    fun eventPraiseTheSun() {
-        statusImage.setImageResource(R.drawable.sunpraise)
-        setTitle(R.string.prisoner_status_praise_the_sun)
-    }
-
-    fun eventWon() {
-        statusImage.setImageResource(R.drawable.free)
-        setTitle(R.string.prisoner_status_free)
-    }
-
-    // Temporary stuff
-    fun tempLogout(view: View) {
+    // Temporary
+    fun tempLogout() {
         logout()
     }
-
-    fun tempAdd1000Power() {
-        powerIncrease(1000)
-    }
     // --------------
-
-    private fun powerRandomRangeIncrease(from: Int, to: Int) {
-        powerIncrease((from..to).random())
-    }
-
-    private fun powerIncrease(power: Int) {
-        powerCounter.text = powerCounter.text
-                .toString()
-                .toInt()
-                .plus(power)
-                .toString()
-    }
-
-    fun prisonerPushUp() {
-        pushUpCounter.text = pushUpCounter.text
-                .toString()
-                .toInt()
-                .inc()
-                .toString()
-        powerRandomRangeIncrease(10, 20)
-    }
-
-    fun prisonerSitUp() {
-        sitUpCounter.text = sitUpCounter.text
-                .toString()
-                .toInt()
-                .inc()
-                .toString()
-        powerRandomRangeIncrease(10, 20)
-    }
 
     // Source for step counter: https://medium.com/@ssaurel/create-a-step-counter-fitness-app-for-android-with-kotlin-bbfb6ffe3ea7
     override fun onResume() {
         super.onResume()
         running = true
-        var stepsSensor = sensorManager?.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
+        val stepsSensor = sensorManager?.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
 
         if (stepsSensor == null) {
             Toast.makeText(this, "No Step Counter Sensor !", Toast.LENGTH_SHORT).show()
@@ -309,7 +212,7 @@ class MainActivity : Activity(), SensorEventListener {
                         .toInt()
                         .inc()
                         .toString()
-                powerRandomRangeIncrease(100, 200)
+                prisonerEvents.powerFromStep()
             }
         }
     }

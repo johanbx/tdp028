@@ -3,6 +3,7 @@
     <string name="prison_bars">Prison Bars</string>
     <string name="button_sit_up">Sit Up</string>
     <string name="button_push_up">Push Up</string>
+    <string name="button_try_escape">Try Escape</string>
     <string name="zero">0</string>
     <string name="zero_power">0 POWER</string>
     <string name="zero_steps">0 STEPS</string>
