@@ -21,4 +21,6 @@
     <!-- Facebook application ID and custom URL scheme (app ID prefixed by 'fb'). -->
     <string name="facebook_application_id" translatable="false">1543194429124979</string>
     <string name="facebook_login_protocol_scheme" translatable="false">fb1543194429124979</string>
+    <string name="channel_name">channel_name</string>
+    <string name="channel_description">channel_description</string>
 </resources>
