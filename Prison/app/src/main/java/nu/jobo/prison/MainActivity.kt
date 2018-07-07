@@ -48,7 +48,7 @@ class MainActivity : Activity(), SensorEventListener {
         const val FENCE_LATITUDE: Double = 59.464997
         const val FENCE_LONGITUDE: Double = 18.048519
         const val FENCE_RADIUS_METER: Float = 100f
-        const val FENCE_EXPIRATION_MILLISECONDS: Long = 20000
+        const val FENCE_EXPIRATION_MILLISECONDS: Long = 200000
 
         const val LOCATION_PERMISSION_REQUEST_CODE = 345
     }

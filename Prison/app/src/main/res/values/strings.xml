@@ -31,4 +31,8 @@
     <string name="geofence_transition_entered">Entering Geofence Area</string>
     <string name="geofence_transition_exited">Exiting Geofence Area</string>
     <string name="unknown_geofence_transition">Unknown Geofence Transition</string>
+    <string name="fence_notification_inside_title">Inside prison area</string>
+    <string name="fence_notification_outside_title">Outside prison area</string>
+    <string name="fence_notification_outside_message">The guards are coming!! run!</string>
+    <string name="fence_notification_inside_message">The guards are satisfied</string>
 </resources>

@@ -7,13 +7,10 @@ import com.google.android.gms.location.Geofence
 import com.google.android.gms.location.GeofencingEvent
 import android.text.TextUtils
 import android.os.Build
-import nu.jobo.prison.R.mipmap.ic_launcher
-import android.graphics.BitmapFactory
 import android.app.PendingIntent
 import android.app.NotificationManager
 import android.app.NotificationChannel
 import android.support.v4.app.NotificationCompat
-import android.content.Context.NOTIFICATION_SERVICE
 import android.support.v4.app.TaskStackBuilder
 
 
@@ -47,16 +44,19 @@ class GeofenceTransitionsIntentService : IntentService("GeofenceService") {
             // multiple geofences.
             val triggeringGeofences = geofencingEvent.triggeringGeofences
 
-            // Get the transition details as a String.
+            if (geofenceTransition == Geofence.GEOFENCE_TRANSITION_ENTER) {
+                sendNotification(getString(R.string.fence_notification_inside_title),
+                        getString(R.string.fence_notification_inside_message))
+            } else {
+                sendNotification(getString(R.string.fence_notification_outside_title),
+                        getString(R.string.fence_notification_outside_message))
+            }
+
+            // Get the transition details as a String and log it.
             val geofenceTransitionDetails = getGeofenceTransitionDetails(
                     geofenceTransition,
                     triggeringGeofences
             )
-
-            // Send notification and log the transition details.
-            // TODO: send a notification
-            sendNotification(geofenceTransitionDetails)
-
             Log.i(TAG, geofenceTransitionDetails)
         } else {
             // Log the error.
@@ -69,7 +69,7 @@ class GeofenceTransitionsIntentService : IntentService("GeofenceService") {
      * Posts a notification in the notification bar when a transition is detected.
      * If the user clicks the notification, control goes to the MainActivity.
      */
-    private fun sendNotification(notificationDetails: String) {
+    private fun sendNotification(title: String, message: String) {
         // Get an instance of the Notification manager
         val mNotificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
 
@@ -83,8 +83,11 @@ class GeofenceTransitionsIntentService : IntentService("GeofenceService") {
             mNotificationManager.createNotificationChannel(mChannel)
         }
 
-        // Create an explicit content Intent that starts the main Activity.
+        // Create an explicit content Intent that "resumes" the main Activity.
         val notificationIntent = Intent(applicationContext, MainActivity::class.java)
+        notificationIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        notificationIntent.addCategory(Intent.CATEGORY_LAUNCHER)
+        notificationIntent.action = Intent.ACTION_MAIN
 
         // Construct a task stack.
         val stackBuilder = TaskStackBuilder.create(this)
@@ -105,8 +108,8 @@ class GeofenceTransitionsIntentService : IntentService("GeofenceService") {
         builder.setSmallIcon(R.mipmap.ic_launcher)
                 // In a real app, you may want to use a library like Volley
                 // to decode the Bitmap.
-                .setContentTitle(notificationDetails)
-                .setContentText("blablablabla")
+                .setContentTitle(title)
+                .setContentText(message)
                 .setContentIntent(notificationPendingIntent)
 
         // Set the Channel ID for Android O.
@@ -115,7 +118,7 @@ class GeofenceTransitionsIntentService : IntentService("GeofenceService") {
         }
 
         // Dismiss notification once the user touches it.
-        builder.setAutoCancel(true)
+        // builder.setAutoCancel(true)
 
         // Issue the notification
         mNotificationManager.notify(0, builder.build())
