@@ -36,4 +36,11 @@
     <string name="fence_notification_outside_message">The guards are coming!! run!</string>
     <string name="fence_notification_inside_message">The guards are satisfied</string>
     <string name="user_textview_text">Anonymous User</string>
+    <string name="user_already_logged_in">User already exist. Which one do you want use?</string>
+    <string name="keep_new_login_button">This new login</string>
+    <string name="keep_old_login_button">My old login</string>
+    <string name="unknown_login_error">Unknown Error: Login Failed</string>
+    <string name="cant_logout_anonymous_user_warning">Can\'t logout anonymous user</string>
+    <string name="user_logged_out_message">You were logged out!</string>
+    <string name="already_logged_in_message">You are already logged in</string>
 </resources>

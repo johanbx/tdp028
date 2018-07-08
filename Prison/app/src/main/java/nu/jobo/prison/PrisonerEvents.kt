@@ -1,5 +1,6 @@
 package nu.jobo.prison
 
+import com.google.firebase.database.FirebaseDatabase
 import java.util.*
 
 /**
@@ -27,8 +28,9 @@ class PrisonerEvents(private val mainActivity: MainActivity) {
     }
 
     private fun powerIncrease(power: Int) {
-        mainActivity.power = mainActivity.power.plus(power)
-        mainActivity.powerCounter.text = mainActivity.power.toString()
+        mainActivity.prisoner.power = mainActivity.prisoner.power.plus(power)
+        mainActivity.powerCounter.text = mainActivity.prisoner.power.toString()
+        mainActivity.dbUpdate()
     }
 
     fun died() {
@@ -59,20 +61,20 @@ class PrisonerEvents(private val mainActivity: MainActivity) {
 
     /* Actions */
     fun pushUp() {
-        mainActivity.pushUps = mainActivity.pushUps.inc()
-        mainActivity.pushUpCounter.text = mainActivity.pushUps.toString()
+        mainActivity.prisoner.pushUps = mainActivity.prisoner.pushUps.inc()
+        mainActivity.pushUpCounter.text = mainActivity.prisoner.pushUps.toString()
         powerRandomRangeIncrease(10, 20)
     }
 
     fun sitUp() {
-        mainActivity.sitUps = mainActivity.sitUps.inc()
-        mainActivity.sitUpCounter.text = mainActivity.sitUps.toString()
+        mainActivity.prisoner.sitUps = mainActivity.prisoner.sitUps.inc()
+        mainActivity.sitUpCounter.text = mainActivity.prisoner.sitUps.toString()
         powerRandomRangeIncrease(10, 20)
     }
 
     fun step() {
-        mainActivity.steps = mainActivity.steps.inc()
-        mainActivity.stepCounter.text = mainActivity.steps.toString()
+        mainActivity.prisoner.steps = mainActivity.prisoner.steps.inc()
+        mainActivity.stepCounter.text = mainActivity.prisoner.steps.toString()
         powerRandomRangeIncrease(100, 200)
     }
 

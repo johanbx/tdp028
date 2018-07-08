@@ -18,7 +18,7 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
-        android:id="@+id/power"
+        android:id="@+id/powerValueTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
@@ -36,7 +36,7 @@
         app:layout_constraintVertical_bias="1.0" />
 
     <TextView
-        android:id="@+id/power_text"
+        android:id="@+id/powerTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
@@ -62,7 +62,7 @@
         app:layout_constraintTop_toBottomOf="@+id/image_power_background" />
 
     <TextView
-        android:id="@+id/steps"
+        android:id="@+id/stepsValueTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
@@ -78,7 +78,7 @@
         app:layout_constraintTop_toTopOf="@+id/image_steps_background" />
 
     <TextView
-        android:id="@+id/steps_text"
+        android:id="@+id/stepsTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
@@ -103,7 +103,7 @@
         app:layout_constraintTop_toBottomOf="@+id/image_steps_background" />
 
     <TextView
-        android:id="@+id/sit_ups_text"
+        android:id="@+id/sitUpsTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
@@ -117,7 +117,7 @@
         app:layout_constraintTop_toTopOf="@+id/image_sit_ups_background" />
 
     <TextView
-        android:id="@+id/text_total_sit_ups"
+        android:id="@+id/sitUpsValueTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
@@ -144,7 +144,7 @@
         app:layout_constraintTop_toBottomOf="@+id/image_sit_ups_background" />
 
     <TextView
-        android:id="@+id/sit_ups_text2"
+        android:id="@+id/pushUpsTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
@@ -158,7 +158,7 @@
         app:layout_constraintTop_toTopOf="@+id/image_push_ups_background" />
 
     <TextView
-        android:id="@+id/text_total_push_ups"
+        android:id="@+id/pushUpsValueTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"

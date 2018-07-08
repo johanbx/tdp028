@@ -18,30 +18,34 @@ import android.support.v4.app.NotificationCompat
 import android.widget.*
 import android.os.Build
 import android.content.pm.PackageManager
+import android.nfc.Tag
 import android.support.v4.app.ActivityCompat
 import android.support.v4.app.NotificationManagerCompat
 import android.support.v4.content.ContextCompat
+import android.util.Log
 import com.firebase.ui.auth.ErrorCodes
 import com.google.android.gms.location.Geofence
 import com.google.android.gms.location.GeofencingClient
 import com.google.android.gms.location.GeofencingRequest
 import com.google.android.gms.location.LocationServices
-import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import kotlinx.android.synthetic.main.activity_main.*
 
 
 class MainActivity : Activity(), SensorEventListener {
 
     companion object {
+        const val TAG = "MAIN"
+
         const val POWER_FOR_ESCAPE = 10000
         const val RC_SIGN_IN = 123
         const val CHANNEL_ID = "CHANNEL_ID"
 
-        const val POWER_KEY = "POWER_KEY"
-        const val STEPS_KEY = "STEPS_KEY"
-        const val SIT_UPS_KEY = "SIT_UPS_KEY"
-        const val PUSH_UPS_KEY = "PUSH_UPS_KEY"
+        const val PRISONER_KEY = "PRISONER_KEY"
 
         const val FENCE_KEY = "FENCE_KEY"
         const val FENCE_LATITUDE: Double = 59.464997
@@ -66,26 +70,21 @@ class MainActivity : Activity(), SensorEventListener {
 
     private lateinit var escapingAttemptNotificationBuilder: NotificationCompat.Builder
     private lateinit var prisonerEvents: PrisonerEvents
-    private lateinit var mAuth: FirebaseAuth
     private lateinit var fence: Geofence
+
+    lateinit var mAuth: FirebaseAuth
 
     lateinit var stepCounter: TextView
     lateinit var statusImage: ImageView
     lateinit var pushUpCounter: TextView
     lateinit var sitUpCounter: TextView
     lateinit var powerCounter: TextView
-
-    var power = 0
-    var steps = 0
-    var sitUps = 0
-    var pushUps = 0
+    lateinit var userRef: String
+    lateinit var prisoner: PrisonerData
 
     override fun onSaveInstanceState(outState: Bundle?) {
         outState?.run {
-            putInt(POWER_KEY, power)
-            putInt(STEPS_KEY, steps)
-            putInt(SIT_UPS_KEY, sitUps)
-            putInt(PUSH_UPS_KEY, pushUps)
+            putSerializable(PRISONER_KEY, prisoner)
         }
 
         super.onSaveInstanceState(outState)
@@ -93,7 +92,6 @@ class MainActivity : Activity(), SensorEventListener {
 
     override fun onRestoreInstanceState(savedInstanceState: Bundle?) {
         extractActionCounterValuesFromSavedBundle(savedInstanceState)
-        initCounterValues()
     }
 
     public override fun onStart() {
@@ -102,87 +100,133 @@ class MainActivity : Activity(), SensorEventListener {
         val currentUser = mAuth.currentUser
 
         if (currentUser == null) {
-            Toast.makeText(this, "Trying to Login", Toast.LENGTH_SHORT).show()
             // Create and launch sign-in intent
             anonymousLogin()
         } else {
-            updateUserUI(currentUser)
+            initUserUI(currentUser)
         }
-
-        // TODO: Fetch saved data from user in the database and fill out the fields
 
         setTitle(R.string.prisoner_status_captured)
     }
 
     fun login() {
-        startActivityForResult(AuthUI.getInstance()
-                .createSignInIntentBuilder()
-                .setAvailableProviders(providers)
-                .enableAnonymousUsersAutoUpgrade()
-                .build(),
-                RC_SIGN_IN)
+        if (mAuth.currentUser!!.isAnonymous) {
+            startActivityForResult(AuthUI.getInstance()
+                    .createSignInIntentBuilder()
+                    .setAvailableProviders(providers)
+                    .enableAnonymousUsersAutoUpgrade()
+                    .build(),
+                    RC_SIGN_IN)
+        } else {
+            Toast.makeText(this, getString(R.string.already_logged_in_message), Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    fun dbUpdate() {
+        val ref = FirebaseDatabase
+                .getInstance()
+                .getReference("users/" + mAuth.currentUser!!.uid)
+
+        ref.setValue(prisoner)
+        ref.child("username").setValue(mAuth.currentUser!!.displayName)
+        FirebaseDatabase.getInstance()
     }
 
     // OBS: TODO: Unsafe, delete this later
-    fun deleteCurrentUser() {
-        mAuth.currentUser?.delete()?.addOnCompleteListener {
-            Toast.makeText(this, "Success: User Deleted", Toast.LENGTH_SHORT).show()
-            finish()
-            startActivity(intent)
+    fun deleteUser(user: FirebaseUser?, callback: ()->Unit) {
+        try {
+            // Database
+            FirebaseDatabase
+                    .getInstance()
+                    .getReference("users/" + user!!.uid)
+                    .removeValue()
+
+            // User
+            user.delete().addOnCompleteListener {
+                callback()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, e.toString())
         }
     }
 
-    fun updateUserUI(user: FirebaseUser?) {
+    fun initUserUI(user: FirebaseUser?) {
         if (!user?.displayName.isNullOrEmpty()) {
             usernameTextView.text = user?.displayName
         }
+
+        val ref = FirebaseDatabase.getInstance().getReference("users/" + user!!.uid)
+        ref.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                if (dataSnapshot.exists()){
+                    prisoner = dataSnapshot.getValue(PrisonerData::class.java)!!
+                    updatePrisonerCounterValues(prisoner)
+                }
+            }
+
+            override fun onCancelled(p0: DatabaseError) {
+
+            }
+        })
+
+        updatePrisonerCounterValues(prisoner)
+    }
+
+    fun updatePrisonerCounterValues(prisonerData: PrisonerData) {
+        pushUpCounter.text = prisoner.pushUps.toString()
+        sitUpCounter.text = prisoner.sitUps.toString()
+        powerCounter.text =  prisoner.power.toString()
+        stepCounter.text = prisoner.steps.toString()
     }
 
     private fun anonymousLogin() {
         mAuth.signInAnonymously()
             .addOnCompleteListener {
                 if (it.isSuccessful) {
-                    Toast.makeText(this, "Success: Anonymous User", Toast.LENGTH_SHORT).show()
-                    updateUserUI(it.result.user)
+                    initUserUI(it.result.user)
                 }
             }
             .addOnFailureListener {
-                Toast.makeText(this, "Failed: Login Error", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.unknown_login_error), Toast.LENGTH_SHORT).show()
             }
     }
 
-    fun loginMergeAlertDialog(response: IdpResponse) {
-        var builder = AlertDialog.Builder(this);
+    private fun loginMergeAlertDialog(response: IdpResponse) {
+        val builder = AlertDialog.Builder(this);
         builder
-            .setMessage("User already exist. Which one do you want to save?")
-            .setPositiveButton("My current login", DialogInterface.OnClickListener {
-                _, which ->
-                    // TODO: Copy over this data to cloud database
-                    Toast.makeText(this, "TODO: Copy over data", Toast.LENGTH_SHORT).show() })
-            .setNegativeButton("Saved Login", DialogInterface.OnClickListener {
+            .setMessage(getString(R.string.user_already_logged_in))
+            .setPositiveButton(getString(R.string.keep_new_login_button), DialogInterface.OnClickListener {
                 _, which ->
                     mAuth.signInWithCredential(response.credentialForLinking!!).addOnCompleteListener {
-                        updateUserUI(it.result.user)
-                    }
-                }
-            )
+                        // Updates the database with the session stored values
+                        // before fetching the values. Which means we "copied" over the new values
+                        dbUpdate()
+                        initUserUI(it.result.user)
+                    }})
+            .setNegativeButton(getString(R.string.keep_old_login_button), DialogInterface.OnClickListener {
+                _, which ->
+                    deleteUser(mAuth.currentUser, {})
+                    mAuth.signInWithCredential(response.credentialForLinking!!).addOnCompleteListener {
+                        initUserUI(it.result.user)
+                    }})
             .show()
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent) {
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
-        if (requestCode == RC_SIGN_IN) {
+        if (data != null && requestCode == RC_SIGN_IN) {
             val response = IdpResponse.fromResultIntent(data)
 
             if (resultCode == Activity.RESULT_OK) {
                 // Successfully signed in
-                updateUserUI(FirebaseAuth.getInstance().currentUser)
-            } else {
+                initUserUI(FirebaseAuth.getInstance().currentUser)
+            }
+            else {
                 if (response?.error?.errorCode == ErrorCodes.ANONYMOUS_UPGRADE_MERGE_CONFLICT) {
                     loginMergeAlertDialog(response)
                 } else {
-                    Toast.makeText(this, "Unknown Error: Login Failed", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.unknown_login_error), Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -215,12 +259,10 @@ class MainActivity : Activity(), SensorEventListener {
         prisonerEvents = PrisonerEvents(this)
 
         statusImage = findViewById(R.id.image_prisoner_status)
-        pushUpCounter = findViewById(R.id.text_total_push_ups)
-        sitUpCounter = findViewById(R.id.text_total_sit_ups)
-        powerCounter = findViewById(R.id.power)
-        stepCounter = findViewById(R.id.steps)
-
-        initCounterValues()
+        pushUpCounter = findViewById(R.id.pushUpsValueTextView)
+        sitUpCounter = findViewById(R.id.sitUpsValueTextView)
+        powerCounter = findViewById(R.id.powerValueTextView)
+        stepCounter = findViewById(R.id.stepsValueTextView)
     }
 
 
@@ -303,7 +345,7 @@ class MainActivity : Activity(), SensorEventListener {
                 // Create the geofence.
                 .build()
 
-        geofencingClient?.addGeofences(getGeofencingRequest(), geofencePendingIntent)?.run {
+        geofencingClient.addGeofences(getGeofencingRequest(), geofencePendingIntent)?.run {
             addOnSuccessListener {
                 Toast.makeText(applicationContext, "success: Geofences added", Toast.LENGTH_SHORT).show()
                 // Geofences added
@@ -318,17 +360,11 @@ class MainActivity : Activity(), SensorEventListener {
     }
 
     private fun extractActionCounterValuesFromSavedBundle(savedInstanceState: Bundle?) {
-        power = savedInstanceState?.getInt(POWER_KEY) ?: 0
-        steps = savedInstanceState?.getInt(STEPS_KEY) ?: 0
-        sitUps = savedInstanceState?.getInt(SIT_UPS_KEY) ?: 0
-        pushUps = savedInstanceState?.getInt(PUSH_UPS_KEY) ?: 0
-    }
-
-    private fun initCounterValues() {
-        pushUpCounter.text = pushUps.toString()
-        sitUpCounter.text = sitUps.toString()
-        powerCounter.text = power.toString()
-        stepCounter.text = steps.toString()
+        if (savedInstanceState != null) {
+            prisoner = savedInstanceState.getSerializable(PRISONER_KEY) as PrisonerData
+        } else {
+            prisoner = PrisonerData()
+        }
     }
 
     private fun initNotification(){
@@ -370,12 +406,12 @@ class MainActivity : Activity(), SensorEventListener {
 
     private fun logout() {
         if (mAuth.currentUser!!.isAnonymous) {
-            Toast.makeText(this, "Can't logout anonymous user", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.cant_logout_anonymous_user_warning), Toast.LENGTH_SHORT).show()
         } else {
             AuthUI.getInstance()
                 .signOut(this)
                 .addOnCompleteListener {
-                    Toast.makeText(this, "You were logged out!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.user_logged_out_message), Toast.LENGTH_SHORT).show()
                     finish()
                     startActivity(intent)
                 }
@@ -435,7 +471,12 @@ class MainActivity : Activity(), SensorEventListener {
                 "Login", {login()})
 
         val tempDeleteUserButton: Button = simpleEventButton(
-                "Delete User", {deleteCurrentUser()})
+                "Delete User", {
+            deleteUser(mAuth.currentUser, {
+                finish()
+                startActivity(intent)
+            })
+        })
 
         return arrayOf<Button>(
                 pushUpButton,
