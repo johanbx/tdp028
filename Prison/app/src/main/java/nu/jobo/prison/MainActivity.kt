@@ -18,7 +18,6 @@ import android.support.v4.app.NotificationCompat
 import android.widget.*
 import android.os.Build
 import android.content.pm.PackageManager
-import android.nfc.Tag
 import android.support.v4.app.ActivityCompat
 import android.support.v4.app.NotificationManagerCompat
 import android.support.v4.content.ContextCompat
@@ -160,7 +159,7 @@ class MainActivity : Activity(), SensorEventListener {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
                 if (dataSnapshot.exists()){
                     prisoner = dataSnapshot.getValue(PrisonerData::class.java)!!
-                    updatePrisonerCounterValues(prisoner)
+                    updatePrisonerCounterValues()
                 }
             }
 
@@ -169,10 +168,10 @@ class MainActivity : Activity(), SensorEventListener {
             }
         })
 
-        updatePrisonerCounterValues(prisoner)
+        updatePrisonerCounterValues()
     }
 
-    fun updatePrisonerCounterValues(prisonerData: PrisonerData) {
+    fun updatePrisonerCounterValues() {
         pushUpCounter.text = prisoner.pushUps.toString()
         sitUpCounter.text = prisoner.sitUps.toString()
         powerCounter.text =  prisoner.power.toString()
@@ -192,19 +191,19 @@ class MainActivity : Activity(), SensorEventListener {
     }
 
     private fun loginMergeAlertDialog(response: IdpResponse) {
-        val builder = AlertDialog.Builder(this);
+        val builder = AlertDialog.Builder(this)
         builder
             .setMessage(getString(R.string.user_already_logged_in))
-            .setPositiveButton(getString(R.string.keep_new_login_button), DialogInterface.OnClickListener {
-                _, which ->
+            .setPositiveButton(getString(R.string.keep_new_login_button), {
+                _, _ ->
                     mAuth.signInWithCredential(response.credentialForLinking!!).addOnCompleteListener {
                         // Updates the database with the session stored values
                         // before fetching the values. Which means we "copied" over the new values
                         dbUpdate()
                         initUserUI(it.result.user)
                     }})
-            .setNegativeButton(getString(R.string.keep_old_login_button), DialogInterface.OnClickListener {
-                _, which ->
+            .setNegativeButton(getString(R.string.keep_old_login_button), {
+                _, _ ->
                     deleteUser(mAuth.currentUser, {})
                     mAuth.signInWithCredential(response.credentialForLinking!!).addOnCompleteListener {
                         initUserUI(it.result.user)
