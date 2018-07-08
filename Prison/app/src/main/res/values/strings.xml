@@ -35,4 +35,5 @@
     <string name="fence_notification_outside_title">Outside prison area</string>
     <string name="fence_notification_outside_message">The guards are coming!! run!</string>
     <string name="fence_notification_inside_message">The guards are satisfied</string>
+    <string name="user_textview_text">Anonymous User</string>
 </resources>

@@ -1,8 +1,9 @@
 package nu.jobo.prison
 
 import android.annotation.SuppressLint
-import android.app.Activity
+import android.app.*
 import android.content.Context
+import android.content.DialogInterface
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -15,21 +16,19 @@ import com.firebase.ui.auth.IdpResponse
 import android.content.Intent
 import android.support.v4.app.NotificationCompat
 import android.widget.*
-import android.app.NotificationManager
-import android.app.NotificationChannel
 import android.os.Build
-import android.app.PendingIntent
 import android.content.pm.PackageManager
-import android.os.Parcelable
-import android.os.PersistableBundle
 import android.support.v4.app.ActivityCompat
 import android.support.v4.app.NotificationManagerCompat
 import android.support.v4.content.ContextCompat
+import com.firebase.ui.auth.ErrorCodes
 import com.google.android.gms.location.Geofence
 import com.google.android.gms.location.GeofencingClient
 import com.google.android.gms.location.GeofencingRequest
 import com.google.android.gms.location.LocationServices
-import java.util.jar.Manifest
+import com.google.firebase.auth.AuthCredential
+import com.google.firebase.auth.FirebaseUser
+import kotlinx.android.synthetic.main.activity_main.*
 
 
 class MainActivity : Activity(), SensorEventListener {
@@ -105,17 +104,69 @@ class MainActivity : Activity(), SensorEventListener {
         if (currentUser == null) {
             Toast.makeText(this, "Trying to Login", Toast.LENGTH_SHORT).show()
             // Create and launch sign-in intent
-            startActivityForResult(
-                AuthUI.getInstance()
-                    .createSignInIntentBuilder()
-                    .setAvailableProviders(providers)
-                    .build(),
-                RC_SIGN_IN)
+            anonymousLogin()
+        } else {
+            updateUserUI(currentUser)
         }
 
         // TODO: Fetch saved data from user in the database and fill out the fields
 
         setTitle(R.string.prisoner_status_captured)
+    }
+
+    fun login() {
+        startActivityForResult(AuthUI.getInstance()
+                .createSignInIntentBuilder()
+                .setAvailableProviders(providers)
+                .enableAnonymousUsersAutoUpgrade()
+                .build(),
+                RC_SIGN_IN)
+    }
+
+    // OBS: TODO: Unsafe, delete this later
+    fun deleteCurrentUser() {
+        mAuth.currentUser?.delete()?.addOnCompleteListener {
+            Toast.makeText(this, "Success: User Deleted", Toast.LENGTH_SHORT).show()
+            finish()
+            startActivity(intent)
+        }
+    }
+
+    fun updateUserUI(user: FirebaseUser?) {
+        if (!user?.displayName.isNullOrEmpty()) {
+            usernameTextView.text = user?.displayName
+        }
+    }
+
+    private fun anonymousLogin() {
+        mAuth.signInAnonymously()
+            .addOnCompleteListener {
+                if (it.isSuccessful) {
+                    Toast.makeText(this, "Success: Anonymous User", Toast.LENGTH_SHORT).show()
+                    updateUserUI(it.result.user)
+                }
+            }
+            .addOnFailureListener {
+                Toast.makeText(this, "Failed: Login Error", Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    fun loginMergeAlertDialog(response: IdpResponse) {
+        var builder = AlertDialog.Builder(this);
+        builder
+            .setMessage("User already exist. Which one do you want to save?")
+            .setPositiveButton("My current login", DialogInterface.OnClickListener {
+                _, which ->
+                    // TODO: Copy over this data to cloud database
+                    Toast.makeText(this, "TODO: Copy over data", Toast.LENGTH_SHORT).show() })
+            .setNegativeButton("Saved Login", DialogInterface.OnClickListener {
+                _, which ->
+                    mAuth.signInWithCredential(response.credentialForLinking!!).addOnCompleteListener {
+                        updateUserUI(it.result.user)
+                    }
+                }
+            )
+            .show()
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent) {
@@ -126,16 +177,13 @@ class MainActivity : Activity(), SensorEventListener {
 
             if (resultCode == Activity.RESULT_OK) {
                 // Successfully signed in
-                val currentUser = FirebaseAuth.getInstance().currentUser
-                Toast.makeText(this, "Login Success", Toast.LENGTH_SHORT).show()
-                // TODO: Load user
-                // ...
+                updateUserUI(FirebaseAuth.getInstance().currentUser)
             } else {
-                // Sign in failed. If response is null the user canceled the
-                // sign-in flow using the back button. Otherwise check
-                // response.getError().getErrorCode() and handle the error.
-                // ...
-                Toast.makeText(this, "Login Failed", Toast.LENGTH_SHORT).show()
+                if (response?.error?.errorCode == ErrorCodes.ANONYMOUS_UPGRADE_MERGE_CONFLICT) {
+                    loginMergeAlertDialog(response)
+                } else {
+                    Toast.makeText(this, "Unknown Error: Login Failed", Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
@@ -296,8 +344,8 @@ class MainActivity : Activity(), SensorEventListener {
 
         escapingAttemptNotificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.mipmap.ic_launcher_round)
-                .setContentTitle("YOU ARE OUTSIDE THE PRISON AREA!")
-                .setContentText("The guards are on the way, run!!")
+                .setContentTitle("Test notification")
+                .setContentText("Test text")
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 // Set the intent that will fire when the user taps the notification
                 .setContentIntent(pendingIntent)
@@ -321,13 +369,17 @@ class MainActivity : Activity(), SensorEventListener {
     }
 
     private fun logout() {
-        AuthUI.getInstance()
+        if (mAuth.currentUser!!.isAnonymous) {
+            Toast.makeText(this, "Can't logout anonymous user", Toast.LENGTH_SHORT).show()
+        } else {
+            AuthUI.getInstance()
                 .signOut(this)
                 .addOnCompleteListener {
                     Toast.makeText(this, "You were logged out!", Toast.LENGTH_SHORT).show()
                     finish()
                     startActivity(intent)
                 }
+        }
     }
 
     private fun simpleEventButton(resourceId: Int, function: () -> Unit): Button {
@@ -379,6 +431,12 @@ class MainActivity : Activity(), SensorEventListener {
         val tempEscapeNotificationButton: Button = simpleEventButton(
                 "Notify", {escapeNotification()})
 
+        val tempLoginButton: Button = simpleEventButton(
+                "Login", {login()})
+
+        val tempDeleteUserButton: Button = simpleEventButton(
+                "Delete User", {deleteCurrentUser()})
+
         return arrayOf<Button>(
                 pushUpButton,
                 sitUpButton,
@@ -390,7 +448,9 @@ class MainActivity : Activity(), SensorEventListener {
                 tempGodKillButton,
                 tryEscapeButton,
                 tempWonButton,
-                tempEscapeNotificationButton)
+                tempEscapeNotificationButton,
+                tempLoginButton,
+                tempDeleteUserButton)
     }
 
     // Temporary
