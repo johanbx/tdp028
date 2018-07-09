@@ -1,6 +1,5 @@
 package nu.jobo.prison
 
-import com.google.firebase.database.FirebaseDatabase
 import java.util.*
 
 /**
@@ -30,7 +29,7 @@ class PrisonerEvents(private val mainActivity: MainActivity) {
     private fun powerIncrease(power: Int) {
         mainActivity.prisoner.power = mainActivity.prisoner.power.plus(power)
         mainActivity.powerCounter.text = mainActivity.prisoner.power.toString()
-        mainActivity.dbUpdate()
+        mainActivity.dbUpdate {  }
     }
 
     fun died() {

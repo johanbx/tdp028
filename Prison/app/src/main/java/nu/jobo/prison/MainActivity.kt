@@ -3,7 +3,6 @@ package nu.jobo.prison
 import android.annotation.SuppressLint
 import android.app.*
 import android.content.Context
-import android.content.DialogInterface
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -12,7 +11,6 @@ import android.os.Bundle
 import com.google.firebase.auth.FirebaseAuth
 import java.util.*
 import com.firebase.ui.auth.AuthUI
-import com.firebase.ui.auth.IdpResponse
 import android.content.Intent
 import android.support.v4.app.NotificationCompat
 import android.widget.*
@@ -22,7 +20,6 @@ import android.support.v4.app.ActivityCompat
 import android.support.v4.app.NotificationManagerCompat
 import android.support.v4.content.ContextCompat
 import android.util.Log
-import com.firebase.ui.auth.ErrorCodes
 import com.google.android.gms.location.Geofence
 import com.google.android.gms.location.GeofencingClient
 import com.google.android.gms.location.GeofencingRequest
@@ -42,7 +39,8 @@ class MainActivity : Activity(), SensorEventListener {
         const val TAG = "TAG_MAIN"
 
         const val POWER_FOR_ESCAPE = 10000
-        const val RC_SIGN_IN = 123
+        const val SIGN_IN_AND_ASK = 120
+        const val SIGN_IN_AND_EXIT = 121
         const val CHANNEL_ID = "CHANNEL_ID"
 
         const val PRISONER_KEY = "PRISONER_KEY"
@@ -81,6 +79,7 @@ class MainActivity : Activity(), SensorEventListener {
     lateinit var powerCounter: TextView
     lateinit var userRef: String
     lateinit var prisoner: PrisonerData
+    lateinit var oldPrisoner: PrisonerData
 
     override fun onSaveInstanceState(outState: Bundle?) {
         outState?.run {
@@ -94,39 +93,160 @@ class MainActivity : Activity(), SensorEventListener {
         extractActionCounterValuesFromSavedBundle(savedInstanceState)
     }
 
-    public override fun onStart() {
-        super.onStart()
-        // Check if user is signed in (non-null) and update UI accordingly.
-        val currentUser = mAuth.currentUser
 
-        if (currentUser == null) {
-            // Create and launch sign-in intent
-            anonymousLogin()
-        } else {
-            initUserUI(currentUser)
+    /*
+    Login-flow:
+    1. login user on start
+        1.1 if user does not exist
+            1.1.1 create a anonymous user
+            1.1.2 login to anonymous user
+            1.1.3 restart the app (go to 1.)
+        1.2 if user exist
+            1.2.1 login to user
+            1.2.2 restart the app (go to 1.)
+    // at this point the user is logged in anonymously or with a normal login
+    2. update the UI with current prisonerdata
+    4. on login manually (aka link)
+        4.1 if login is not anonymously
+            4.1.1 cancel request
+        4.2 if user exist
+            4.2.1 ask if user want to save current values
+            4.2.2 on yes
+                4.2.1.1 update this login firebase database with current prisonerdata
+                4.2.1.2 delete the anonymous user
+                4.2.1.3 restart the app (go to 1.)
+            4.2.3 on no
+                4.2.1.1 delete the anonymous user
+                4.2.3.2 restart the app (go to 1.)
+        4.3 if user is new
+            4.3.1 (go to 4.2.3)
+    5. on logoutUser
+        2.1 logoutUser the user
+        2.2 restart the app (go to 1.)
+    6. on delete
+        3.1 delete the user
+        3.2 restart the app (go to 1.)
+    */
+
+    fun restartApp() {
+        finish()
+        startActivity(intent)
+    }
+
+    fun newUserLink(oldUser: FirebaseUser) {
+        dbUpdate(){
+            restartApp()
+        }
+    }
+
+    fun onLinkLogin() {
+        if (!mAuth.currentUser!!.isAnonymous){
+            return
         }
 
+        val oldUser = mAuth.currentUser!!
+        loginUser(SIGN_IN_AND_ASK)
+    }
+
+    private fun saveCurrentValuesDialog(saveCurrentValues: (Boolean) -> Unit) {
+        val builder = AlertDialog.Builder(this)
+        builder
+            .setMessage(getString(R.string.user_already_logged_in))
+            .setPositiveButton(getString(R.string.keep_new_login_button), {
+                _, _ -> saveCurrentValues(true)})
+            .setNegativeButton(getString(R.string.keep_old_login_button), {
+                _, _ -> saveCurrentValues(false) })
+            .show()
+    }
+
+    fun loginUserOnStart() {
+        if (mAuth.currentUser == null){
+            createAndLoginAnonymousUser()
+        } else {
+            initOnDatabaseChanges()
+        }
+    }
+
+    private fun initOnDatabaseChanges() {
+        val ref = FirebaseDatabase.getInstance().getReference("users/" + mAuth.currentUser!!.uid)
+        ref.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                if (dataSnapshot.exists()){
+                    prisoner = dataSnapshot.getValue(PrisonerData::class.java)!!
+                    updateUI()
+                }
+            }
+            override fun onCancelled(p0: DatabaseError) {}
+        })
+    }
+
+    private fun updateUI() {
+        usernameTextView.text = mAuth.currentUser?.displayName
+        pushUpCounter.text = prisoner.pushUps.toString()
+        sitUpCounter.text = prisoner.sitUps.toString()
+        powerCounter.text =  prisoner.power.toString()
+        stepCounter.text = prisoner.steps.toString()
+    }
+
+    // OBS: onActivityResult for actual logic
+    // TODO: find a way to delete anonymous users after a login
+    // TODO: find a way to see if an account already exist
+    // (so new know if we are going to ask the users if they want to keep their
+    // current prisonerData or not)
+    private fun loginUser(signInIntentCode: Int) {
+        var intent = AuthUI.getInstance()
+                .createSignInIntentBuilder()
+                .setAvailableProviders(providers)
+                .build()
+        oldPrisoner = prisoner
+        startActivityForResult(intent, signInIntentCode)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (data != null) {
+            when (requestCode) {
+                SIGN_IN_AND_EXIT -> restartApp()
+                SIGN_IN_AND_ASK -> {
+                    saveCurrentValuesDialog(){
+                        yes ->
+                        if (yes) {
+                            prisoner = oldPrisoner
+                            dbUpdate(){
+                                restartApp()
+                            }
+                        }else {
+                            restartApp()
+                        }
+                    }
+                }
+            }
+
+            if (requestCode == SIGN_IN_AND_EXIT) {
+                restartApp()
+            }
+        }
+    }
+
+    private fun createAndLoginAnonymousUser() {
+        mAuth.signInAnonymously()
+            .addOnCompleteListener {
+                initOnDatabaseChanges()
+            }
+            .addOnFailureListener {
+                Toast.makeText(this, getString(R.string.unknown_login_error), Toast.LENGTH_SHORT).show()
+                finish()
+            }
+    }
+
+    public override fun onStart() {
+        super.onStart()
+        loginUserOnStart()
         setTitle(R.string.prisoner_status_captured)
     }
 
-    fun login() {
-        if (mAuth.currentUser!!.isAnonymous) {
-            forceLogin()
-        } else {
-            Toast.makeText(this, getString(R.string.already_logged_in_message), Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    fun forceLogin() {
-        startActivityForResult(AuthUI.getInstance()
-                .createSignInIntentBuilder()
-                .setAvailableProviders(providers)
-                .enableAnonymousUsersAutoUpgrade()
-                .build(),
-                RC_SIGN_IN)
-    }
-
-    fun dbUpdate() {
+    fun dbUpdate(function: () -> Unit) {
         val ref = FirebaseDatabase
                 .getInstance()
                 .getReference("users/" + mAuth.currentUser!!.uid)
@@ -154,7 +274,7 @@ class MainActivity : Activity(), SensorEventListener {
                     if (it.exception is FirebaseAuthRecentLoginRequiredException) {
                         // prompt login if user cant delete itself
                         Toast.makeText(this, getString(R.string.login_to_delete_account), Toast.LENGTH_SHORT).show()
-                        forceLogin()
+                        loginUser(SIGN_IN_AND_EXIT)
                     } else {
                         Toast.makeText(this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show()
                         Log.e(TAG, it.exception.toString())
@@ -164,88 +284,6 @@ class MainActivity : Activity(), SensorEventListener {
         } catch (e: Exception) {
             Toast.makeText(this, "Failed to delete user", Toast.LENGTH_SHORT).show()
             Log.e(TAG, e.toString())
-        }
-    }
-
-    fun initUserUI(user: FirebaseUser?) {
-        if (!user?.displayName.isNullOrEmpty()) {
-            usernameTextView.text = user?.displayName
-        }
-
-        val ref = FirebaseDatabase.getInstance().getReference("users/" + user!!.uid)
-        ref.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                if (dataSnapshot.exists()){
-                    prisoner = dataSnapshot.getValue(PrisonerData::class.java)!!
-                    updatePrisonerCounterValues()
-                }
-            }
-
-            override fun onCancelled(p0: DatabaseError) {
-
-            }
-        })
-
-        updatePrisonerCounterValues()
-    }
-
-    fun updatePrisonerCounterValues() {
-        pushUpCounter.text = prisoner.pushUps.toString()
-        sitUpCounter.text = prisoner.sitUps.toString()
-        powerCounter.text =  prisoner.power.toString()
-        stepCounter.text = prisoner.steps.toString()
-    }
-
-    private fun anonymousLogin() {
-        mAuth.signInAnonymously()
-            .addOnCompleteListener {
-                if (it.isSuccessful) {
-                    initUserUI(it.result.user)
-                }
-            }
-            .addOnFailureListener {
-                Toast.makeText(this, getString(R.string.unknown_login_error), Toast.LENGTH_SHORT).show()
-            }
-    }
-
-    private fun loginMergeAlertDialog(response: IdpResponse) {
-        val builder = AlertDialog.Builder(this)
-        builder
-            .setMessage(getString(R.string.user_already_logged_in))
-            .setPositiveButton(getString(R.string.keep_new_login_button), {
-                _, _ ->
-                    mAuth.signInWithCredential(response.credentialForLinking!!).addOnCompleteListener {
-                        // Updates the database with the session stored values
-                        // before fetching the values. Which means we "copied" over the new values
-                        dbUpdate()
-                        initUserUI(it.result.user)
-                    }})
-            .setNegativeButton(getString(R.string.keep_old_login_button), {
-                _, _ ->
-                    deleteUser(mAuth.currentUser, {})
-                    mAuth.signInWithCredential(response.credentialForLinking!!).addOnCompleteListener {
-                        initUserUI(it.result.user)
-                    }})
-            .show()
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-
-        if (data != null && requestCode == RC_SIGN_IN) {
-            val response = IdpResponse.fromResultIntent(data)
-
-            if (resultCode == Activity.RESULT_OK) {
-                // Successfully signed in
-                initUserUI(FirebaseAuth.getInstance().currentUser)
-            }
-            else {
-                if (response?.error?.errorCode == ErrorCodes.ANONYMOUS_UPGRADE_MERGE_CONFLICT) {
-                    loginMergeAlertDialog(response)
-                } else {
-                    Toast.makeText(this, getString(R.string.unknown_login_error), Toast.LENGTH_SHORT).show()
-                }
-            }
         }
     }
 
@@ -421,7 +459,7 @@ class MainActivity : Activity(), SensorEventListener {
         }
     }
 
-    private fun logout() {
+    private fun logoutUser() {
         if (mAuth.currentUser!!.isAnonymous) {
             Toast.makeText(this, getString(R.string.cant_logout_anonymous_user_warning), Toast.LENGTH_SHORT).show()
         } else {
@@ -429,8 +467,7 @@ class MainActivity : Activity(), SensorEventListener {
                 .signOut(this)
                 .addOnCompleteListener {
                     Toast.makeText(this, getString(R.string.user_logged_out_message), Toast.LENGTH_SHORT).show()
-                    finish()
-                    startActivity(intent)
+                    restartApp()
                 }
         }
     }
@@ -467,7 +504,7 @@ class MainActivity : Activity(), SensorEventListener {
                 "Died", {prisonerEvents.died()})
 
         val tempLogoutButton: Button = simpleEventButton(
-                "Logout", {logout()})
+                "Logout", {logoutUser()})
 
         val tempPraiseTheSunButton: Button = simpleEventButton(
                 "Praise Sun", {prisonerEvents.eventPraiseTheSun()})
@@ -485,7 +522,7 @@ class MainActivity : Activity(), SensorEventListener {
                 "Notify", {escapeNotification()})
 
         val tempLoginButton: Button = simpleEventButton(
-                "Login", {login()})
+                "Login", {loginUser(SIGN_IN_AND_ASK)})
 
         val tempDeleteUserButton: Button = simpleEventButton(
                 "Delete User", {
