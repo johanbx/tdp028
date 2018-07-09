@@ -43,4 +43,6 @@
     <string name="cant_logout_anonymous_user_warning">Can\'t logout anonymous user</string>
     <string name="user_logged_out_message">You were logged out!</string>
     <string name="already_logged_in_message">You are already logged in</string>
+    <string name="unknown_error">An unknown error occured</string>
+    <string name="login_to_delete_account">Please relogin to delete account</string>
 </resources>

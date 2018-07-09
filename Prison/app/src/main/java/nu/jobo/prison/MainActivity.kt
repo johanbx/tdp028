@@ -27,6 +27,7 @@ import com.google.android.gms.location.Geofence
 import com.google.android.gms.location.GeofencingClient
 import com.google.android.gms.location.GeofencingRequest
 import com.google.android.gms.location.LocationServices
+import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -38,7 +39,7 @@ import kotlinx.android.synthetic.main.activity_main.*
 class MainActivity : Activity(), SensorEventListener {
 
     companion object {
-        const val TAG = "MAIN"
+        const val TAG = "TAG_MAIN"
 
         const val POWER_FOR_ESCAPE = 10000
         const val RC_SIGN_IN = 123
@@ -110,15 +111,19 @@ class MainActivity : Activity(), SensorEventListener {
 
     fun login() {
         if (mAuth.currentUser!!.isAnonymous) {
-            startActivityForResult(AuthUI.getInstance()
-                    .createSignInIntentBuilder()
-                    .setAvailableProviders(providers)
-                    .enableAnonymousUsersAutoUpgrade()
-                    .build(),
-                    RC_SIGN_IN)
+            forceLogin()
         } else {
             Toast.makeText(this, getString(R.string.already_logged_in_message), Toast.LENGTH_SHORT).show()
         }
+    }
+
+    fun forceLogin() {
+        startActivityForResult(AuthUI.getInstance()
+                .createSignInIntentBuilder()
+                .setAvailableProviders(providers)
+                .enableAnonymousUsersAutoUpgrade()
+                .build(),
+                RC_SIGN_IN)
     }
 
     fun dbUpdate() {
@@ -142,9 +147,22 @@ class MainActivity : Activity(), SensorEventListener {
 
             // User
             user.delete().addOnCompleteListener {
-                callback()
+                if (it.isSuccessful) {
+                    Toast.makeText(this, "Removed user", Toast.LENGTH_SHORT).show()
+                    callback()
+                } else {
+                    if (it.exception is FirebaseAuthRecentLoginRequiredException) {
+                        // prompt login if user cant delete itself
+                        Toast.makeText(this, getString(R.string.login_to_delete_account), Toast.LENGTH_SHORT).show()
+                        forceLogin()
+                    } else {
+                        Toast.makeText(this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show()
+                        Log.e(TAG, it.exception.toString())
+                    }
+                }
             }
         } catch (e: Exception) {
+            Toast.makeText(this, "Failed to delete user", Toast.LENGTH_SHORT).show()
             Log.e(TAG, e.toString())
         }
     }
