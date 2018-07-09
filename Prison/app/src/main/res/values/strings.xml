@@ -35,7 +35,7 @@
     <string name="fence_notification_outside_title">Outside prison area</string>
     <string name="fence_notification_outside_message">The guards are coming!! run!</string>
     <string name="fence_notification_inside_message">The guards are satisfied</string>
-    <string name="user_textview_text">Anonymous User</string>
+    <string name="anonymous">Anonymous User</string>
     <string name="user_already_logged_in">User already exist. Which one do you want use?</string>
     <string name="keep_new_login_button">This new login</string>
     <string name="keep_old_login_button">My old login</string>

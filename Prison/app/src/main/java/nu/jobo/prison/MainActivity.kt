@@ -93,59 +93,9 @@ class MainActivity : Activity(), SensorEventListener {
         extractActionCounterValuesFromSavedBundle(savedInstanceState)
     }
 
-
-    /*
-    Login-flow:
-    1. login user on start
-        1.1 if user does not exist
-            1.1.1 create a anonymous user
-            1.1.2 login to anonymous user
-            1.1.3 restart the app (go to 1.)
-        1.2 if user exist
-            1.2.1 login to user
-            1.2.2 restart the app (go to 1.)
-    // at this point the user is logged in anonymously or with a normal login
-    2. update the UI with current prisonerdata
-    4. on login manually (aka link)
-        4.1 if login is not anonymously
-            4.1.1 cancel request
-        4.2 if user exist
-            4.2.1 ask if user want to save current values
-            4.2.2 on yes
-                4.2.1.1 update this login firebase database with current prisonerdata
-                4.2.1.2 delete the anonymous user
-                4.2.1.3 restart the app (go to 1.)
-            4.2.3 on no
-                4.2.1.1 delete the anonymous user
-                4.2.3.2 restart the app (go to 1.)
-        4.3 if user is new
-            4.3.1 (go to 4.2.3)
-    5. on logoutUser
-        2.1 logoutUser the user
-        2.2 restart the app (go to 1.)
-    6. on delete
-        3.1 delete the user
-        3.2 restart the app (go to 1.)
-    */
-
     fun restartApp() {
         finish()
         startActivity(intent)
-    }
-
-    fun newUserLink(oldUser: FirebaseUser) {
-        dbUpdate(){
-            restartApp()
-        }
-    }
-
-    fun onLinkLogin() {
-        if (!mAuth.currentUser!!.isAnonymous){
-            return
-        }
-
-        val oldUser = mAuth.currentUser!!
-        loginUser(SIGN_IN_AND_ASK)
     }
 
     private fun saveCurrentValuesDialog(saveCurrentValues: (Boolean) -> Unit) {
@@ -168,6 +118,7 @@ class MainActivity : Activity(), SensorEventListener {
     }
 
     private fun initOnDatabaseChanges() {
+        updateUI()
         val ref = FirebaseDatabase.getInstance().getReference("users/" + mAuth.currentUser!!.uid)
         ref.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
@@ -181,7 +132,11 @@ class MainActivity : Activity(), SensorEventListener {
     }
 
     private fun updateUI() {
-        usernameTextView.text = mAuth.currentUser?.displayName
+        if (mAuth.currentUser?.displayName.isNullOrEmpty()) {
+            usernameTextView.text = getString(R.string.anonymous)
+        } else {
+            usernameTextView.text = mAuth.currentUser?.displayName
+        }
         pushUpCounter.text = prisoner.pushUps.toString()
         sitUpCounter.text = prisoner.sitUps.toString()
         powerCounter.text =  prisoner.power.toString()
@@ -207,24 +162,20 @@ class MainActivity : Activity(), SensorEventListener {
 
         if (data != null) {
             when (requestCode) {
-                SIGN_IN_AND_EXIT -> restartApp()
+                SIGN_IN_AND_EXIT -> initOnDatabaseChanges()
                 SIGN_IN_AND_ASK -> {
                     saveCurrentValuesDialog(){
                         yes ->
                         if (yes) {
                             prisoner = oldPrisoner
                             dbUpdate(){
-                                restartApp()
+                                initOnDatabaseChanges()
                             }
                         }else {
-                            restartApp()
+                            initOnDatabaseChanges()
                         }
                     }
                 }
-            }
-
-            if (requestCode == SIGN_IN_AND_EXIT) {
-                restartApp()
             }
         }
     }
@@ -250,10 +201,7 @@ class MainActivity : Activity(), SensorEventListener {
         val ref = FirebaseDatabase
                 .getInstance()
                 .getReference("users/" + mAuth.currentUser!!.uid)
-
         ref.setValue(prisoner)
-        ref.child("username").setValue(mAuth.currentUser!!.displayName)
-        FirebaseDatabase.getInstance()
     }
 
     // OBS: TODO: Unsafe, delete this later
