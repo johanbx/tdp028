@@ -16,6 +16,7 @@ import android.support.v4.app.NotificationCompat
 import android.widget.*
 import android.os.Build
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.support.v4.app.ActivityCompat
 import android.support.v4.app.NotificationManagerCompat
 import android.support.v4.content.ContextCompat
@@ -30,6 +31,7 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import com.google.firebase.dynamiclinks.FirebaseDynamicLinks
 import kotlinx.android.synthetic.main.activity_main.*
 
 
@@ -42,6 +44,7 @@ class MainActivity : Activity(), SensorEventListener {
         const val SIGN_IN_AND_ASK = 120
         const val SIGN_IN_AND_EXIT = 121
         const val CHANNEL_ID = "CHANNEL_ID"
+        const val REQUEST_INVITE = 555
 
         const val PRISONER_KEY = "PRISONER_KEY"
 
@@ -219,7 +222,7 @@ class MainActivity : Activity(), SensorEventListener {
                     Toast.makeText(this, "Removed user", Toast.LENGTH_SHORT).show()
                     callback()
                 } else {
-                    if (it.exception is FirebaseAuthRecentLoginRequiredException) {
+                    if (it.exception is FirebaseAuthRecentLoginRequiredException?) {
                         // prompt login if user cant delete itself
                         Toast.makeText(this, getString(R.string.login_to_delete_account), Toast.LENGTH_SHORT).show()
                         loginUser(SIGN_IN_AND_EXIT)
@@ -266,6 +269,16 @@ class MainActivity : Activity(), SensorEventListener {
         sitUpCounter = findViewById(R.id.sitUpsValueTextView)
         powerCounter = findViewById(R.id.powerValueTextView)
         stepCounter = findViewById(R.id.stepsValueTextView)
+
+        FirebaseDynamicLinks.getInstance().getDynamicLink(intent)
+                .addOnFailureListener{
+                    Log.e(TAG, it.toString())}
+                .addOnSuccessListener {
+                    if (it != null) {
+                        Toast.makeText(applicationContext,
+                                "Firebase Link Detected", Toast.LENGTH_SHORT).show()
+                    }
+                }
     }
 
 
@@ -480,6 +493,17 @@ class MainActivity : Activity(), SensorEventListener {
             })
         })
 
+        val tempShareButton: Button = simpleEventButton(
+                "Share App", {
+            val shortLink = "https://prison.page.link/invite"
+            val msg =  "I found this awesome game called Prison! $shortLink"
+            val sendIntent = Intent()
+            sendIntent.action = Intent.ACTION_SEND
+            sendIntent.putExtra(Intent.EXTRA_TEXT, msg)
+            sendIntent.type = "text/plain"
+            startActivity(sendIntent)
+        })
+
         return arrayOf<Button>(
                 pushUpButton,
                 sitUpButton,
@@ -493,7 +517,8 @@ class MainActivity : Activity(), SensorEventListener {
                 tempWonButton,
                 tempEscapeNotificationButton,
                 tempLoginButton,
-                tempDeleteUserButton)
+                tempDeleteUserButton,
+                tempShareButton)
     }
 
     // Temporary

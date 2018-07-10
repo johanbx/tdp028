@@ -37,6 +37,7 @@ dependencies {
     implementation 'com.google.android.gms:play-services-maps:15.0.1'
     implementation 'com.google.firebase:firebase-database:16.0.1'
     implementation 'com.google.firebase:firebase-dynamic-links:16.0.1'
+    implementation 'com.google.firebase:firebase-invites:16.0.1'
 }
 
 apply plugin: 'com.google.gms.google-services'
