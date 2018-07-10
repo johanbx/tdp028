@@ -496,7 +496,8 @@ class MainActivity : Activity(), SensorEventListener {
         val tempShareButton: Button = simpleEventButton(
                 "Share App", {
             val shortLink = "https://prison.page.link/invite"
-            val msg =  "I found this awesome game called Prison! $shortLink"
+            val msg =  "I found this awesome game called Prison! Can you " +
+                    "escape before I can? Can you beat my ${prisoner.power} power? $shortLink"
             val sendIntent = Intent()
             sendIntent.action = Intent.ACTION_SEND
             sendIntent.putExtra(Intent.EXTRA_TEXT, msg)
