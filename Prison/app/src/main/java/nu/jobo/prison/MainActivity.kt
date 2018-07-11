@@ -301,10 +301,8 @@ class MainActivity : Activity(), SensorEventListener {
 
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
 
-        val buttons: Array<Button> = initButtons()
-
-        val buttonGridView: GridView = findViewById(R.id.ButtonGridView)
-        buttonGridView.adapter = ButtonAdapter(this, buttons)
+        val buttons = initButtons()
+        ButtonGridView.adapter = ButtonAdapter(this, buttons)
 
         prisonerEvents = PrisonerEvents(this)
 
