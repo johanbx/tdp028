@@ -16,6 +16,8 @@ import android.support.v4.app.NotificationCompat
 import android.widget.*
 import android.os.Build
 import android.content.pm.PackageManager
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.preference.PreferenceManager
 import android.support.v4.app.ActivityCompat
 import android.support.v4.app.NotificationManagerCompat
@@ -31,6 +33,8 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import com.google.firebase.remoteconfig.FirebaseRemoteConfig
+import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings
 import kotlinx.android.synthetic.main.activity_main.*
 
 
@@ -73,6 +77,7 @@ class MainActivity : Activity(), SensorEventListener {
     private lateinit var escapingAttemptNotificationBuilder: NotificationCompat.Builder
     private lateinit var prisonerEvents: PrisonerEvents
     private lateinit var fence: Geofence
+    private lateinit var remoteConfig: FirebaseRemoteConfig
 
     lateinit var mAuth: FirebaseAuth
 
@@ -253,15 +258,34 @@ class MainActivity : Activity(), SensorEventListener {
         }
     }
 
+    private fun applyTheme() {
+        powerTextView.setTextColor(Color.parseColor(remoteConfig.getString("theme_power_text_color")))
+    }
+
+    private fun initRemoteConfig() {
+        remoteConfig = FirebaseRemoteConfig.getInstance()
+        remoteConfig.setConfigSettings(
+                FirebaseRemoteConfigSettings.Builder()
+                        .setDeveloperModeEnabled(BuildConfig.DEBUG)
+                        .build())
+        remoteConfig.setDefaults(R.xml.remote_config_defaults)
+        remoteConfig.fetch(0).addOnCompleteListener {
+            if (it.isSuccessful) {
+                remoteConfig.activateFetched()
+                Toast.makeText(this, remoteConfig.getString("dev_welcome_message"),
+                        Toast.LENGTH_LONG).show()
+            } else {
+                Toast.makeText(this, "failed to fetch remote config", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        if (firstTimeRun) {
-            return startWelcomeActivity()
-        }
-
+        if (firstTimeRun) { return startWelcomeActivity() }
         setContentView(R.layout.activity_main)
 
+        initRemoteConfig()
         createNotificationChannel()
         initNotification()
 
@@ -295,6 +319,8 @@ class MainActivity : Activity(), SensorEventListener {
             Toast.makeText(applicationContext,
                     getString(R.string.given_free_power), Toast.LENGTH_LONG).show()
         }
+
+        applyTheme()
     }
 
 
