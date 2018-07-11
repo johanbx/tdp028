@@ -12,12 +12,10 @@ import com.google.firebase.auth.FirebaseAuth
 import java.util.*
 import com.firebase.ui.auth.AuthUI
 import android.content.Intent
-import android.content.SharedPreferences
 import android.support.v4.app.NotificationCompat
 import android.widget.*
 import android.os.Build
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.preference.PreferenceManager
 import android.support.v4.app.ActivityCompat
 import android.support.v4.app.NotificationManagerCompat
@@ -33,7 +31,6 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
-import com.google.firebase.dynamiclinks.FirebaseDynamicLinks
 import kotlinx.android.synthetic.main.activity_main.*
 
 
@@ -199,7 +196,7 @@ class MainActivity : Activity(), SensorEventListener {
     }
 
     private fun startWelcomeActivity() {
-        val intent = Intent(applicationContext, FirebaseLink::class.java)
+        val intent = Intent(applicationContext, WelcomeActivity::class.java)
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
         startActivity(intent)
         finish()

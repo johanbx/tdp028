@@ -10,7 +10,7 @@ import android.widget.Toast
 import com.google.firebase.dynamiclinks.FirebaseDynamicLinks
 import kotlinx.android.synthetic.main.activity_firebase_link.*
 
-class FirebaseLink : Activity() {
+class WelcomeActivity : Activity() {
 
     var GIVE_FREE_POWER = false
 
