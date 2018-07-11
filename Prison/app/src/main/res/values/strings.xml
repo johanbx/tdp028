@@ -45,4 +45,9 @@
     <string name="already_logged_in_message">You are already logged in</string>
     <string name="unknown_error">An unknown error occured</string>
     <string name="login_to_delete_account">Please relogin to delete account</string>
+    <string name="welcome_to_prison">Welcome to Prison!</string>
+    <string name="goal_of_game">The goal of this game is to get as much power as possible and try to escape from jail.</string>
+    <string name="once_escaped">Once you have escape you need to run (yes run in real life!) to get out of prison!</string>
+    <string name="friend_invite_extra_power">You were invited by a friend and have recieved 2000 starting power!</string>
+    <string name="given_free_power">Your friend invite gave you 2000 free power!</string>
 </resources>

@@ -13,15 +13,19 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <service android:name=".GeofenceTransitionsIntentService" />
+
         <meta-data
             android:name="com.facebook.sdk.ApplicationId"
             android:value="@string/facebook_application_id" />
+
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+        <activity android:name=".FirebaseLink">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
@@ -29,9 +33,9 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:scheme="https"
                     android:host="jobo.nu"
-                    android:pathPattern="/invite" />
+                    android:pathPattern="/invite"
+                    android:scheme="https" />
             </intent-filter>
         </activity>
     </application>

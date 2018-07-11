@@ -12,11 +12,13 @@ import com.google.firebase.auth.FirebaseAuth
 import java.util.*
 import com.firebase.ui.auth.AuthUI
 import android.content.Intent
+import android.content.SharedPreferences
 import android.support.v4.app.NotificationCompat
 import android.widget.*
 import android.os.Build
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.preference.PreferenceManager
 import android.support.v4.app.ActivityCompat
 import android.support.v4.app.NotificationManagerCompat
 import android.support.v4.content.ContextCompat
@@ -45,6 +47,7 @@ class MainActivity : Activity(), SensorEventListener {
         const val SIGN_IN_AND_EXIT = 121
         const val CHANNEL_ID = "CHANNEL_ID"
         const val REQUEST_INVITE = 555
+        const val FRIEND_INVITE_POWER_BONUS = "FRIEND_INVITE_POWER_BONUS"
 
         const val PRISONER_KEY = "PRISONER_KEY"
 
@@ -66,6 +69,7 @@ class MainActivity : Activity(), SensorEventListener {
 
     private var running = false
     private var sensorManager:SensorManager? = null
+    private var firstTimeRun = false
 
     lateinit var geofencingClient: GeofencingClient
 
@@ -194,10 +198,24 @@ class MainActivity : Activity(), SensorEventListener {
             }
     }
 
+    private fun startWelcomeActivity() {
+        val intent = Intent(applicationContext, FirebaseLink::class.java)
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+        startActivity(intent)
+        finish()
+    }
     public override fun onStart() {
         super.onStart()
-        loginUserOnStart()
-        setTitle(R.string.prisoner_status_captured)
+
+        val prefs = PreferenceManager.getDefaultSharedPreferences(applicationContext)
+        firstTimeRun = prefs.getBoolean("FIRST_TIME_RUN", true)
+        if (firstTimeRun) {
+            prefs.edit().putBoolean("FIRST_TIME_RUN", false).commit()
+            return startWelcomeActivity()
+        } else {
+            loginUserOnStart()
+            setTitle(R.string.prisoner_status_captured)
+        }
     }
 
     fun dbUpdate(function: () -> Unit) {
@@ -240,6 +258,11 @@ class MainActivity : Activity(), SensorEventListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        if (firstTimeRun) {
+            return startWelcomeActivity()
+        }
+
         setContentView(R.layout.activity_main)
 
         createNotificationChannel()
@@ -270,15 +293,11 @@ class MainActivity : Activity(), SensorEventListener {
         powerCounter = findViewById(R.id.powerValueTextView)
         stepCounter = findViewById(R.id.stepsValueTextView)
 
-        FirebaseDynamicLinks.getInstance().getDynamicLink(intent)
-                .addOnFailureListener{
-                    Log.e(TAG, it.toString())}
-                .addOnSuccessListener {
-                    if (it != null) {
-                        Toast.makeText(applicationContext,
-                                "Firebase Link Detected", Toast.LENGTH_SHORT).show()
-                    }
-                }
+        if (prisoner.power == 0 && intent.getIntExtra(FRIEND_INVITE_POWER_BONUS, 0) != 0) {
+            prisoner.power = intent.getIntExtra(FRIEND_INVITE_POWER_BONUS, 2000)
+            Toast.makeText(applicationContext,
+                    getString(R.string.given_free_power), Toast.LENGTH_LONG).show()
+        }
     }
 
 
