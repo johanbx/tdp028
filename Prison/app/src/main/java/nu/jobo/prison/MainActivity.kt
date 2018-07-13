@@ -27,6 +27,7 @@ import com.google.android.gms.location.Geofence
 import com.google.android.gms.location.GeofencingClient
 import com.google.android.gms.location.GeofencingRequest
 import com.google.android.gms.location.LocationServices
+import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.DataSnapshot
@@ -80,6 +81,7 @@ class MainActivity : Activity(), SensorEventListener {
     private lateinit var remoteConfig: FirebaseRemoteConfig
 
     lateinit var mAuth: FirebaseAuth
+    lateinit var mFirebaseAnalytics: FirebaseAnalytics
 
     lateinit var stepCounter: TextView
     lateinit var statusImage: ImageView
@@ -292,6 +294,7 @@ class MainActivity : Activity(), SensorEventListener {
         extractActionCounterValuesFromSavedBundle(savedInstanceState)
 
         mAuth = FirebaseAuth.getInstance()
+        mFirebaseAnalytics = FirebaseAnalytics.getInstance(this)
 
         // Require Location Permission & Setup Geofence
         requirePermission(android.Manifest.permission.ACCESS_FINE_LOCATION,
