@@ -77,6 +77,7 @@ class MainActivity : Activity(), SensorEventListener {
 
     private lateinit var escapingAttemptNotificationBuilder: NotificationCompat.Builder
     private lateinit var prisonerEvents: PrisonerEvents
+    private lateinit var analyticEvents: AnalyticEvents
     private lateinit var fence: Geofence
     private lateinit var remoteConfig: FirebaseRemoteConfig
 
@@ -308,6 +309,7 @@ class MainActivity : Activity(), SensorEventListener {
         ButtonGridView.adapter = ButtonAdapter(this, buttons)
 
         prisonerEvents = PrisonerEvents(this)
+        analyticEvents = AnalyticEvents(this)
 
         statusImage = findViewById(R.id.image_prisoner_status)
         pushUpCounter = findViewById(R.id.pushUpsValueTextView)
@@ -538,6 +540,8 @@ class MainActivity : Activity(), SensorEventListener {
 
         val tempShareButton: Button = simpleEventButton(
                 "Share App", {
+            analyticEvents.shareApp(mAuth.currentUser!!.uid, prisoner.power)
+
             val shortLink = "https://prison.page.link/invite"
             val msg =  "I found this awesome game called Prison! Can you " +
                     "escape before I can? Can you beat my ${prisoner.power} power? $shortLink"
