@@ -48,10 +48,8 @@ class MainActivity : Activity(), SensorEventListener {
         const val SIGN_IN_AND_ASK = 120
         const val SIGN_IN_AND_EXIT = 121
         const val CHANNEL_ID = "CHANNEL_ID"
-        const val REQUEST_INVITE = 555
         const val FRIEND_INVITE_POWER_BONUS = "FRIEND_INVITE_POWER_BONUS"
-
-        const val PRISONER_KEY = "PRISONER_KEY"
+        const val FIRST_TIME_RUN = "FIRST_TIME_RUN"
 
         const val FENCE_KEY = "FENCE_KEY"
         const val FENCE_LATITUDE: Double = 59.464997
@@ -72,6 +70,7 @@ class MainActivity : Activity(), SensorEventListener {
     private var running = false
     private var sensorManager:SensorManager? = null
     private var firstTimeRun = false
+    var prisoner = PrisonerData()
 
     lateinit var geofencingClient: GeofencingClient
 
@@ -90,197 +89,12 @@ class MainActivity : Activity(), SensorEventListener {
     lateinit var sitUpCounter: TextView
     lateinit var powerCounter: TextView
     lateinit var userRef: String
-    lateinit var prisoner: PrisonerData
     lateinit var oldPrisoner: PrisonerData
 
-    override fun onSaveInstanceState(outState: Bundle?) {
-        outState?.run {
-            putSerializable(PRISONER_KEY, prisoner)
-        }
-
-        super.onSaveInstanceState(outState)
-    }
-
-    override fun onRestoreInstanceState(savedInstanceState: Bundle?) {
-        extractActionCounterValuesFromSavedBundle(savedInstanceState)
-    }
-
-    fun restartApp() {
-        finish()
-        startActivity(intent)
-    }
-
-    private fun saveCurrentValuesDialog(saveCurrentValues: (Boolean) -> Unit) {
-        val builder = AlertDialog.Builder(this)
-        builder
-            .setMessage(getString(R.string.user_already_logged_in))
-            .setPositiveButton(getString(R.string.keep_new_login_button), {
-                _, _ -> saveCurrentValues(true)})
-            .setNegativeButton(getString(R.string.keep_old_login_button), {
-                _, _ -> saveCurrentValues(false) })
-            .show()
-    }
-
-    fun loginUserOnStart() {
-        if (mAuth.currentUser == null){
-            createAndLoginAnonymousUser()
-        } else {
-            initOnDatabaseChanges()
-        }
-    }
-
-    private fun initOnDatabaseChanges() {
-        updateUI()
-        val ref = FirebaseDatabase.getInstance().getReference("users/" + mAuth.currentUser!!.uid)
-        ref.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                if (dataSnapshot.exists()){
-                    prisoner = dataSnapshot.getValue(PrisonerData::class.java)!!
-                    updateUI()
-                }
-            }
-            override fun onCancelled(p0: DatabaseError) {}
-        })
-    }
-
-    private fun updateUI() {
-        if (mAuth.currentUser?.displayName.isNullOrEmpty()) {
-            usernameTextView.text = getString(R.string.anonymous)
-        } else {
-            usernameTextView.text = mAuth.currentUser?.displayName
-        }
-        pushUpCounter.text = prisoner.pushUps.toString()
-        sitUpCounter.text = prisoner.sitUps.toString()
-        powerCounter.text =  prisoner.power.toString()
-        stepCounter.text = prisoner.steps.toString()
-    }
-
-    // OBS: onActivityResult for actual logic
-    // TODO: find a way to delete anonymous users after a login
-    // TODO: find a way to see if an account already exist
-    // (so new know if we are going to ask the users if they want to keep their
-    // current prisonerData or not)
-    private fun loginUser(signInIntentCode: Int) {
-        var intent = AuthUI.getInstance()
-                .createSignInIntentBuilder()
-                .setAvailableProviders(providers)
-                .build()
-        oldPrisoner = prisoner
-        startActivityForResult(intent, signInIntentCode)
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-
-        if (data != null) {
-            when (requestCode) {
-                SIGN_IN_AND_EXIT -> initOnDatabaseChanges()
-                SIGN_IN_AND_ASK -> {
-                    saveCurrentValuesDialog(){
-                        yes ->
-                        if (yes) {
-                            prisoner = oldPrisoner
-                            dbUpdate(){
-                                initOnDatabaseChanges()
-                            }
-                        }else {
-                            initOnDatabaseChanges()
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private fun createAndLoginAnonymousUser() {
-        mAuth.signInAnonymously()
-            .addOnCompleteListener {
-                initOnDatabaseChanges()
-            }
-            .addOnFailureListener {
-                Toast.makeText(this, getString(R.string.unknown_login_error), Toast.LENGTH_SHORT).show()
-                finish()
-            }
-    }
-
-    private fun startWelcomeActivity() {
-        val intent = Intent(applicationContext, WelcomeActivity::class.java)
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-        startActivity(intent)
-        finish()
-    }
+    /* "On" events */
     public override fun onStart() {
         super.onStart()
-
-        val prefs = PreferenceManager.getDefaultSharedPreferences(applicationContext)
-        firstTimeRun = prefs.getBoolean("FIRST_TIME_RUN", true)
-        if (firstTimeRun) {
-            prefs.edit().putBoolean("FIRST_TIME_RUN", false).commit()
-            return startWelcomeActivity()
-        } else {
-            loginUserOnStart()
-            setTitle(R.string.prisoner_status_captured)
-        }
-    }
-
-    fun dbUpdate(function: () -> Unit) {
-        val ref = FirebaseDatabase
-                .getInstance()
-                .getReference("users/" + mAuth.currentUser!!.uid)
-        ref.setValue(prisoner)
-    }
-
-    // OBS: TODO: Unsafe, delete this later
-    fun deleteUser(user: FirebaseUser?, callback: ()->Unit) {
-        try {
-            // Database
-            FirebaseDatabase
-                    .getInstance()
-                    .getReference("users/" + user!!.uid)
-                    .removeValue()
-
-            // User
-            user.delete().addOnCompleteListener {
-                if (it.isSuccessful) {
-                    Toast.makeText(this, "Removed user", Toast.LENGTH_SHORT).show()
-                    callback()
-                } else {
-                    if (it.exception is FirebaseAuthRecentLoginRequiredException?) {
-                        // prompt login if user cant delete itself
-                        Toast.makeText(this, getString(R.string.login_to_delete_account), Toast.LENGTH_SHORT).show()
-                        loginUser(SIGN_IN_AND_EXIT)
-                    } else {
-                        Toast.makeText(this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show()
-                        Log.e(TAG, it.exception.toString())
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            Toast.makeText(this, "Failed to delete user", Toast.LENGTH_SHORT).show()
-            Log.e(TAG, e.toString())
-        }
-    }
-
-    private fun applyTheme() {
-        powerTextView.setTextColor(Color.parseColor(remoteConfig.getString("theme_power_text_color")))
-    }
-
-    private fun initRemoteConfig() {
-        remoteConfig = FirebaseRemoteConfig.getInstance()
-        remoteConfig.setConfigSettings(
-                FirebaseRemoteConfigSettings.Builder()
-                        .setDeveloperModeEnabled(BuildConfig.DEBUG)
-                        .build())
-        remoteConfig.setDefaults(R.xml.remote_config_defaults)
-        remoteConfig.fetch(0).addOnCompleteListener {
-            if (it.isSuccessful) {
-                remoteConfig.activateFetched()
-                Toast.makeText(this, remoteConfig.getString("dev_welcome_message"),
-                        Toast.LENGTH_LONG).show()
-            } else {
-                Toast.makeText(this, "failed to fetch remote config", Toast.LENGTH_LONG).show()
-            }
-        }
+        checkFirstTimeRun()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -291,8 +105,6 @@ class MainActivity : Activity(), SensorEventListener {
         initRemoteConfig()
         createNotificationChannel()
         initNotification()
-
-        extractActionCounterValuesFromSavedBundle(savedInstanceState)
 
         mAuth = FirebaseAuth.getInstance()
         mFirebaseAnalytics = FirebaseAnalytics.getInstance(this)
@@ -326,6 +138,29 @@ class MainActivity : Activity(), SensorEventListener {
         applyTheme()
     }
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        PrisonerGame.activityResult(requestCode, resultCode, data)
+
+        if (data != null) {
+            when (requestCode) {
+                SIGN_IN_AND_EXIT -> initOnDatabaseChanges()
+                SIGN_IN_AND_ASK -> {
+                    saveCurrentValuesDialog(){
+                        yes ->
+                        if (yes) {
+                            prisoner = oldPrisoner
+                            dbUpdate(){
+                                initOnDatabaseChanges()
+                            }
+                        }else {
+                            initOnDatabaseChanges()
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>?,
                                             grantResults: IntArray?) {
@@ -354,30 +189,71 @@ class MainActivity : Activity(), SensorEventListener {
         }
     }
 
-    // OBS: onRequestPermissionsResult is required.
-    private fun requirePermission(permission: String, requestCode: Int) {
-        if (ContextCompat.checkSelfPermission(
-                        this,
-                        permission) != PackageManager.PERMISSION_GRANTED){
-            ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(permission),
-                    requestCode)
+    // Source for step counter:
+    // https://medium.com/@ssaurel/create-a-step-counter-fitness-app-for-android-with-kotlin-bbfb6ffe3ea7
+    override fun onResume() {
+        super.onResume()
+        running = true
+        val stepsSensor = sensorManager?.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR)
+
+        if (stepsSensor == null) {
+            Toast.makeText(this, "No Step Counter Sensor !", Toast.LENGTH_SHORT).show()
+        } else {
+            sensorManager?.registerListener(this, stepsSensor, SensorManager.SENSOR_DELAY_UI)
         }
     }
 
-    private fun getGeofencingRequest(): GeofencingRequest {
-        return GeofencingRequest.Builder().apply {
-            setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
-            addGeofences(listOf<Geofence>(fence))
-        }.build()
+    override fun onPause() {
+        super.onPause()
+        running = false
+        sensorManager?.unregisterListener(this)
     }
 
-    private val geofencePendingIntent: PendingIntent by lazy {
-        val intent = Intent(this, GeofenceTransitionsIntentService::class.java)
-        // We use FLAG_UPDATE_CURRENT so that we get the same pending intent back when calling
-        // addGeofences() and removeGeofences().
-        PendingIntent.getService(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+    }
+
+    override fun onSensorChanged(event: SensorEvent?) {
+        if (running) {
+            if (event != null) {
+                prisonerEvents.step()
+            }
+        }
+    }
+
+    /* Init:s */
+    private fun initOnDatabaseChanges() {
+        updateUI()
+        val ref = FirebaseDatabase.getInstance().getReference("users/" + mAuth.currentUser!!.uid)
+        ref.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                if (dataSnapshot.exists()){
+                    prisoner = dataSnapshot.getValue(PrisonerData::class.java)!!
+                    updateUI()
+                }
+            }
+            override fun onCancelled(p0: DatabaseError) {}
+        })
+    }
+
+    private fun initNotification(){
+        // Create an explicit intent for an Activity in your app
+        // This type of intent remembers the counter values, source:
+        // https://stackoverflow.com/questions/5502427/resume-application-and-stack-from-notification
+        val intent = Intent(this, MainActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        intent.addCategory(Intent.CATEGORY_LAUNCHER)
+        intent.action = Intent.ACTION_MAIN
+
+        val pendingIntent = PendingIntent.getActivity(this, 0, intent, 0)
+
+        escapingAttemptNotificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSmallIcon(R.mipmap.ic_launcher_round)
+                .setContentTitle("Test notification")
+                .setContentText("Test text")
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                // Set the intent that will fire when the user taps the notification
+                .setContentIntent(pendingIntent)
+                .setAutoCancel(true) // removes notification on tap
     }
 
     @SuppressLint("MissingPermission")
@@ -420,33 +296,156 @@ class MainActivity : Activity(), SensorEventListener {
         }
     }
 
-    private fun extractActionCounterValuesFromSavedBundle(savedInstanceState: Bundle?) {
-        if (savedInstanceState != null) {
-            prisoner = savedInstanceState.getSerializable(PRISONER_KEY) as PrisonerData
-        } else {
-            prisoner = PrisonerData()
+    private fun initRemoteConfig() {
+        remoteConfig = FirebaseRemoteConfig.getInstance()
+        remoteConfig.setConfigSettings(
+                FirebaseRemoteConfigSettings.Builder()
+                        .setDeveloperModeEnabled(BuildConfig.DEBUG)
+                        .build())
+        remoteConfig.setDefaults(R.xml.remote_config_defaults)
+        remoteConfig.fetch(0).addOnCompleteListener {
+            if (it.isSuccessful) {
+                remoteConfig.activateFetched()
+                Toast.makeText(this, remoteConfig.getString("dev_welcome_message"),
+                        Toast.LENGTH_LONG).show()
+            } else {
+                Toast.makeText(this, "failed to fetch remote config", Toast.LENGTH_LONG).show()
+            }
         }
     }
 
-    private fun initNotification(){
-        // Create an explicit intent for an Activity in your app
-        // This type of intent remembers the counter values, source:
-        // https://stackoverflow.com/questions/5502427/resume-application-and-stack-from-notification
-        val intent = Intent(this, MainActivity::class.java)
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        intent.addCategory(Intent.CATEGORY_LAUNCHER)
-        intent.action = Intent.ACTION_MAIN
+    /* Authentication Related */
+    private fun logoutUser() {
+        if (mAuth.currentUser!!.isAnonymous) {
+            Toast.makeText(this, getString(R.string.cant_logout_anonymous_user_warning), Toast.LENGTH_SHORT).show()
+        } else {
+            AuthUI.getInstance()
+                    .signOut(this)
+                    .addOnCompleteListener {
+                        Toast.makeText(this, getString(R.string.user_logged_out_message), Toast.LENGTH_SHORT).show()
+                        restartApp()
+                    }
+        }
+    }
 
-        val pendingIntent = PendingIntent.getActivity(this, 0, intent, 0)
+    // OBS: TODO: Unsafe, delete this later
+    private fun deleteUser(user: FirebaseUser?, callback: ()->Unit) {
+        try {
+            // Database
+            FirebaseDatabase
+                    .getInstance()
+                    .getReference("users/" + user!!.uid)
+                    .removeValue()
 
-        escapingAttemptNotificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID)
-                .setSmallIcon(R.mipmap.ic_launcher_round)
-                .setContentTitle("Test notification")
-                .setContentText("Test text")
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                // Set the intent that will fire when the user taps the notification
-                .setContentIntent(pendingIntent)
-                .setAutoCancel(true) // removes notification on tap
+            // User
+            user.delete().addOnCompleteListener {
+                if (it.isSuccessful) {
+                    Toast.makeText(this, "Removed user", Toast.LENGTH_SHORT).show()
+                    callback()
+                } else {
+                    if (it.exception is FirebaseAuthRecentLoginRequiredException?) {
+                        // prompt login if user cant delete itself
+                        Toast.makeText(this, getString(R.string.login_to_delete_account), Toast.LENGTH_SHORT).show()
+                        loginUser(SIGN_IN_AND_EXIT)
+                    } else {
+                        Toast.makeText(this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show()
+                        Log.e(TAG, it.exception.toString())
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Toast.makeText(this, "Failed to delete user", Toast.LENGTH_SHORT).show()
+            Log.e(TAG, e.toString())
+        }
+    }
+
+    private fun saveCurrentValuesDialog(saveCurrentValues: (Boolean) -> Unit) {
+        val builder = AlertDialog.Builder(this)
+        builder
+                .setMessage(getString(R.string.user_already_logged_in))
+                .setPositiveButton(getString(R.string.keep_new_login_button), {
+                    _, _ -> saveCurrentValues(true)})
+                .setNegativeButton(getString(R.string.keep_old_login_button), {
+                    _, _ -> saveCurrentValues(false) })
+                .show()
+    }
+
+    private fun loginUserOnStart() {
+        if (mAuth.currentUser == null){
+            createAndLoginAnonymousUser()
+        } else {
+            initOnDatabaseChanges()
+        }
+    }
+
+    // OBS: onActivityResult for actual logic
+    // TODO: find a way to delete anonymous users after a login
+    // TODO: find a way to see if an account already exist
+    // (so new know if we are going to ask the users if they want to keep their
+    // current prisonerData or not)
+    private fun loginUser(signInIntentCode: Int) {
+        var intent = AuthUI.getInstance()
+                .createSignInIntentBuilder()
+                .setAvailableProviders(providers)
+                .build()
+        oldPrisoner = prisoner
+        startActivityForResult(intent, signInIntentCode)
+    }
+
+
+    private fun createAndLoginAnonymousUser() {
+        mAuth.signInAnonymously()
+                .addOnCompleteListener {
+                    initOnDatabaseChanges()
+                }
+                .addOnFailureListener {
+                    Toast.makeText(this, getString(R.string.unknown_login_error), Toast.LENGTH_SHORT).show()
+                    finish()
+                }
+    }
+
+    /* Misc */
+    private fun restartApp() {
+        finish()
+        startActivity(intent)
+    }
+
+    private fun startWelcomeActivity() {
+        val intent = Intent(applicationContext, WelcomeActivity::class.java)
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+        startActivity(intent)
+        finish()
+    }
+
+    private fun checkFirstTimeRun() {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(applicationContext)
+        firstTimeRun = prefs.getBoolean(FIRST_TIME_RUN, true)
+        if (firstTimeRun) {
+            prefs.edit().putBoolean(FIRST_TIME_RUN, false).commit()
+            return startWelcomeActivity()
+        } else {
+            loginUserOnStart()
+            setTitle(R.string.prisoner_status_captured)
+        }
+    }
+
+    fun dbUpdate(function: () -> Unit) {
+        val ref = FirebaseDatabase
+                .getInstance()
+                .getReference("users/" + mAuth.currentUser!!.uid)
+        ref.setValue(prisoner)
+    }
+
+    // OBS: onRequestPermissionsResult is required.
+    private fun requirePermission(permission: String, requestCode: Int) {
+        if (ContextCompat.checkSelfPermission(
+                        this,
+                        permission) != PackageManager.PERMISSION_GRANTED){
+            ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(permission),
+                    requestCode)
+        }
     }
 
     private fun createNotificationChannel() {
@@ -465,17 +464,29 @@ class MainActivity : Activity(), SensorEventListener {
         }
     }
 
-    private fun logoutUser() {
-        if (mAuth.currentUser!!.isAnonymous) {
-            Toast.makeText(this, getString(R.string.cant_logout_anonymous_user_warning), Toast.LENGTH_SHORT).show()
+    // Temporary
+    private fun escapeNotification() {
+        val notificationManager = NotificationManagerCompat.from(this)
+        // notificationId is a unique int for each notification that you must define
+        notificationManager.notify(123, escapingAttemptNotificationBuilder.build())
+    }
+
+    /* UI-related */
+    private fun updateUI() {
+        if (mAuth.currentUser?.displayName.isNullOrEmpty()) {
+            usernameTextView.text = getString(R.string.anonymous)
         } else {
-            AuthUI.getInstance()
-                .signOut(this)
-                .addOnCompleteListener {
-                    Toast.makeText(this, getString(R.string.user_logged_out_message), Toast.LENGTH_SHORT).show()
-                    restartApp()
-                }
+            usernameTextView.text = mAuth.currentUser?.displayName
         }
+        pushUpCounter.text = prisoner.pushUps.toString()
+        sitUpCounter.text = prisoner.sitUps.toString()
+        powerCounter.text =  prisoner.power.toString()
+        stepCounter.text = prisoner.steps.toString()
+    }
+
+    // Used in Remote Configuration
+    private fun applyTheme() {
+        powerTextView.setTextColor(Color.parseColor(remoteConfig.getString("theme_power_text_color")))
     }
 
     private fun simpleEventButton(resourceId: Int, function: () -> Unit): Button {
@@ -569,42 +580,18 @@ class MainActivity : Activity(), SensorEventListener {
                 tempShareButton)
     }
 
-    // Temporary
-    private fun escapeNotification() {
-        val notificationManager = NotificationManagerCompat.from(this)
-        // notificationId is a unique int for each notification that you must define
-        notificationManager.notify(123, escapingAttemptNotificationBuilder.build())
-    }
-    // --------------
-
-    // Source for step counter:
-    // https://medium.com/@ssaurel/create-a-step-counter-fitness-app-for-android-with-kotlin-bbfb6ffe3ea7
-    override fun onResume() {
-        super.onResume()
-        running = true
-        val stepsSensor = sensorManager?.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR)
-
-        if (stepsSensor == null) {
-            Toast.makeText(this, "No Step Counter Sensor !", Toast.LENGTH_SHORT).show()
-        } else {
-            sensorManager?.registerListener(this, stepsSensor, SensorManager.SENSOR_DELAY_UI)
-        }
+    /* Geofence-related */
+    private fun getGeofencingRequest(): GeofencingRequest {
+        return GeofencingRequest.Builder().apply {
+            setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
+            addGeofences(listOf<Geofence>(fence))
+        }.build()
     }
 
-    override fun onPause() {
-        super.onPause()
-        running = false
-        sensorManager?.unregisterListener(this)
-    }
-
-    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-    }
-
-    override fun onSensorChanged(event: SensorEvent?) {
-        if (running) {
-            if (event != null) {
-                prisonerEvents.step()
-            }
-        }
+    private val geofencePendingIntent: PendingIntent by lazy {
+        val intent = Intent(this, GeofenceTransitionsIntentService::class.java)
+        // We use FLAG_UPDATE_CURRENT so that we get the same pending intent back when calling
+        // addGeofences() and removeGeofences().
+        PendingIntent.getService(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
     }
 }
