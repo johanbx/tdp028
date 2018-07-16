@@ -17,7 +17,6 @@ import android.widget.*
 import android.os.Build
 import android.content.pm.PackageManager
 import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
 import android.preference.PreferenceManager
 import android.support.v4.app.ActivityCompat
 import android.support.v4.app.NotificationManagerCompat
@@ -58,6 +57,10 @@ class MainActivity : Activity(), SensorEventListener {
         const val FENCE_EXPIRATION_MILLISECONDS: Long = 200000
 
         const val LOCATION_PERMISSION_REQUEST_CODE = 345
+
+        const val INTENT_LOGIN = "INTENT_LOGIN"
+        const val INTENT_LOGOUT = "INTENT_LOGOUT"
+        const val INTENT_DELETE_ACCOUNT = "INTENT_DELETE_ACCOUNT"
     }
 
     // Authentication Providers (login ui)
@@ -140,7 +143,8 @@ class MainActivity : Activity(), SensorEventListener {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        PrisonerGame.activityResult(requestCode, resultCode, data)
+
+        Log.d(TAG, "OnActivityResult called")
 
         if (data != null) {
             when (requestCode) {
@@ -153,8 +157,6 @@ class MainActivity : Activity(), SensorEventListener {
                             dbUpdate(){
                                 initOnDatabaseChanges()
                             }
-                        }else {
-                            initOnDatabaseChanges()
                         }
                     }
                 }
@@ -189,6 +191,11 @@ class MainActivity : Activity(), SensorEventListener {
         }
     }
 
+    override fun onNewIntent(intent: Intent?) {
+        if (intent != null)
+            setIntent(intent)
+    }
+
     // Source for step counter:
     // https://medium.com/@ssaurel/create-a-step-counter-fitness-app-for-android-with-kotlin-bbfb6ffe3ea7
     override fun onResume() {
@@ -200,6 +207,22 @@ class MainActivity : Activity(), SensorEventListener {
             Toast.makeText(this, "No Step Counter Sensor !", Toast.LENGTH_SHORT).show()
         } else {
             sensorManager?.registerListener(this, stepsSensor, SensorManager.SENSOR_DELAY_UI)
+        }
+
+        Log.d(TAG, "onResume called")
+
+        if (intent.getStringExtra(INTENT_LOGIN) == INTENT_LOGIN) {
+            intent.removeExtra(INTENT_LOGIN)
+            loginUser(SIGN_IN_AND_ASK)
+        } else if (intent.getStringExtra(INTENT_DELETE_ACCOUNT) == INTENT_DELETE_ACCOUNT){
+            intent.removeExtra(INTENT_DELETE_ACCOUNT)
+            deleteUser(mAuth.currentUser, {
+                finish()
+                startActivity(intent)
+            })
+        } else if (intent.getStringExtra(INTENT_LOGOUT) == INTENT_LOGOUT) {
+            intent.removeExtra(INTENT_LOGOUT)
+            logoutUser()
         }
     }
 
@@ -221,6 +244,7 @@ class MainActivity : Activity(), SensorEventListener {
     }
 
     /* Init:s */
+
     private fun initOnDatabaseChanges() {
         updateUI()
         val ref = FirebaseDatabase.getInstance().getReference("users/" + mAuth.currentUser!!.uid)
@@ -316,6 +340,10 @@ class MainActivity : Activity(), SensorEventListener {
 
     /* Authentication Related */
     private fun logoutUser() {
+        when (mAuth.currentUser){
+            null -> return
+        }
+
         if (mAuth.currentUser!!.isAnonymous) {
             Toast.makeText(this, getString(R.string.cant_logout_anonymous_user_warning), Toast.LENGTH_SHORT).show()
         } else {
@@ -362,10 +390,10 @@ class MainActivity : Activity(), SensorEventListener {
     private fun saveCurrentValuesDialog(saveCurrentValues: (Boolean) -> Unit) {
         val builder = AlertDialog.Builder(this)
         builder
-                .setMessage(getString(R.string.user_already_logged_in))
-                .setPositiveButton(getString(R.string.keep_new_login_button), {
+                .setMessage("Cloud Save Detected. Which data do you want to keep?")
+                .setPositiveButton("This new login", {
                     _, _ -> saveCurrentValues(true)})
-                .setNegativeButton(getString(R.string.keep_old_login_button), {
+                .setNegativeButton("Old login", {
                     _, _ -> saveCurrentValues(false) })
                 .show()
     }
@@ -434,6 +462,7 @@ class MainActivity : Activity(), SensorEventListener {
                 .getInstance()
                 .getReference("users/" + mAuth.currentUser!!.uid)
         ref.setValue(prisoner)
+        function()
     }
 
     // OBS: onRequestPermissionsResult is required.
@@ -520,9 +549,6 @@ class MainActivity : Activity(), SensorEventListener {
         val tempDiedButton: Button = simpleEventButton(
                 "Died", {prisonerEvents.died()})
 
-        val tempLogoutButton: Button = simpleEventButton(
-                "Logout", {logoutUser()})
-
         val tempPraiseTheSunButton: Button = simpleEventButton(
                 "Praise Sun", {prisonerEvents.eventPraiseTheSun()})
 
@@ -538,17 +564,6 @@ class MainActivity : Activity(), SensorEventListener {
         val tempEscapeNotificationButton: Button = simpleEventButton(
                 "Notify", {escapeNotification()})
 
-        val tempLoginButton: Button = simpleEventButton(
-                "Login", {loginUser(SIGN_IN_AND_ASK)})
-
-        val tempDeleteUserButton: Button = simpleEventButton(
-                "Delete User", {
-            deleteUser(mAuth.currentUser, {
-                finish()
-                startActivity(intent)
-            })
-        })
-
         val tempShareButton: Button = simpleEventButton(
                 "Share App", {
             analyticEvents.shareApp(mAuth.currentUser!!.uid, prisoner.power)
@@ -563,21 +578,24 @@ class MainActivity : Activity(), SensorEventListener {
             startActivity(sendIntent)
         })
 
+        val tempSettingsButton: Button = simpleEventButton(
+                "Settings", {
+                startActivity(Intent(this, SettingsActivity::class.java))
+        })
+
         return arrayOf<Button>(
                 pushUpButton,
                 sitUpButton,
                 tempCapturedButton,
                 tempDiedButton,
-                tempLogoutButton,
                 tempPraiseTheSunButton,
                 tempAdd1000PowerButton,
                 tempGodKillButton,
                 tryEscapeButton,
                 tempWonButton,
                 tempEscapeNotificationButton,
-                tempLoginButton,
-                tempDeleteUserButton,
-                tempShareButton)
+                tempShareButton,
+                tempSettingsButton)
     }
 
     /* Geofence-related */
