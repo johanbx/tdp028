@@ -17,6 +17,7 @@ import android.widget.*
 import android.os.Build
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.media.MediaPlayer
 import android.preference.PreferenceManager
 import android.support.v4.app.ActivityCompat
 import android.support.v4.app.NotificationManagerCompat
@@ -61,6 +62,9 @@ class MainActivity : Activity(), SensorEventListener {
         const val INTENT_LOGIN = "INTENT_LOGIN"
         const val INTENT_LOGOUT = "INTENT_LOGOUT"
         const val INTENT_DELETE_ACCOUNT = "INTENT_DELETE_ACCOUNT"
+
+        lateinit var mediaPlayer: MediaPlayer
+        var mediaPlayerMuted = false
     }
 
     // Authentication Providers (login ui)
@@ -91,7 +95,6 @@ class MainActivity : Activity(), SensorEventListener {
     lateinit var pushUpCounter: TextView
     lateinit var sitUpCounter: TextView
     lateinit var powerCounter: TextView
-    lateinit var userRef: String
     lateinit var oldPrisoner: PrisonerData
 
     /* "On" events */
@@ -137,6 +140,8 @@ class MainActivity : Activity(), SensorEventListener {
             Toast.makeText(applicationContext,
                     getString(R.string.given_free_power), Toast.LENGTH_LONG).show()
         }
+
+        initMediaPlayer()
 
         applyTheme()
     }
@@ -200,6 +205,8 @@ class MainActivity : Activity(), SensorEventListener {
     // https://medium.com/@ssaurel/create-a-step-counter-fitness-app-for-android-with-kotlin-bbfb6ffe3ea7
     override fun onResume() {
         super.onResume()
+        mediaPlayer.start()
+
         running = true
         val stepsSensor = sensorManager?.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR)
 
@@ -232,6 +239,18 @@ class MainActivity : Activity(), SensorEventListener {
         sensorManager?.unregisterListener(this)
     }
 
+    override fun onStop() {
+        super.onStop()
+
+        Log.d(TAG, "onStop called")
+        mediaPlayer.pause()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        mediaPlayer.release()
+    }
+
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
     }
 
@@ -244,6 +263,12 @@ class MainActivity : Activity(), SensorEventListener {
     }
 
     /* Init:s */
+    private fun initMediaPlayer() {
+        mediaPlayer = MediaPlayer.create(applicationContext, R.raw.background_music)
+        mediaPlayer.isLooping = true
+        mediaPlayer.start()
+    }
+
 
     private fun initOnDatabaseChanges() {
         updateUI()
@@ -580,7 +605,9 @@ class MainActivity : Activity(), SensorEventListener {
 
         val tempSettingsButton: Button = simpleEventButton(
                 "Settings", {
-                startActivity(Intent(this, SettingsActivity::class.java))
+            val settingIntent = Intent(this, SettingsActivity::class.java)
+            settingIntent.flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+            startActivityIfNeeded(settingIntent, 0)
         })
 
         return arrayOf<Button>(
