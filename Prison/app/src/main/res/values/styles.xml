@@ -1,8 +1,24 @@
 <resources>
 
-    <!-- Base application theme. -->
-    <style name="AppTheme" parent="android:Theme.Material.Light.DarkActionBar">
-        <!-- Customize your theme here. -->
+    <style name="defaultAlterDialog" parent="android:Widget.Material.Light.ButtonBar.AlertDialog">
+        <item name="android:text">@color/white</item>
+        <item name="android:windowBackground">@drawable/dialog_border</item>
+    </style>
+
+    <style name="background">
+        <item name="android:background">@color/colorPrisonPrimary</item>
+    </style>
+
+    <style name="defaultButton" parent="android:Widget.Material.Light.Button">
+        <item name="android:background">@drawable/button_border</item>
+    </style>
+
+    <style name="AppTheme" parent="android:Theme.Material">
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+        <item name="android:buttonStyle">@style/defaultButton</item>
+        <item name="buttonStyle">@style/defaultButton</item>
     </style>
 
 </resources>

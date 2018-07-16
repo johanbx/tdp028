@@ -4,7 +4,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".SettingsActivity">
+    tools:context=".SettingsActivity"
+    style="@style/background">
 
     <Button
         android:id="@+id/syncCloudSaveButton"
@@ -56,6 +57,7 @@
         android:layout_height="wrap_content"
         android:layout_marginEnd="8dp"
         android:layout_marginTop="24dp"
+        android:textColor="@color/white"
         android:checked="true"
         android:text="@string/sound"
         android:textSize="18sp"

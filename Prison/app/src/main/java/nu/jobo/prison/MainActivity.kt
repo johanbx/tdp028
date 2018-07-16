@@ -228,7 +228,14 @@ class MainActivity : Activity(), SensorEventListener {
     // https://medium.com/@ssaurel/create-a-step-counter-fitness-app-for-android-with-kotlin-bbfb6ffe3ea7
     override fun onResume() {
         super.onResume()
-        mediaPlayer.start()
+        try {
+            mediaPlayer.start()
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to start mediaplayer")
+            Log.e(TAG, "restarting mediaplayer...")
+            initMediaPlayer()
+        }
+
 
         running = true
         val stepsSensor = sensorManager?.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR)
@@ -246,13 +253,6 @@ class MainActivity : Activity(), SensorEventListener {
             loginUser(SIGN_IN_AND_ASK)
         } else if (intent.getStringExtra(INTENT_DELETE_ACCOUNT) == INTENT_DELETE_ACCOUNT){
             intent.removeExtra(INTENT_DELETE_ACCOUNT)
-            deleteUser(mAuth.currentUser, {
-                finish()
-                startActivity(intent)
-            })
-        } else if (intent.getStringExtra(INTENT_LOGOUT) == INTENT_LOGOUT) {
-            intent.removeExtra(INTENT_LOGOUT)
-            logoutUser()
         } else if (intent.getStringExtra(INTENT_WON_GAME) == INTENT_WON_GAME) {
             Log.d(TAG, "User won the game")
             intent.removeExtra(INTENT_WON_GAME)
@@ -270,8 +270,16 @@ class MainActivity : Activity(), SensorEventListener {
     override fun onStop() {
         super.onStop()
 
-        Log.d(TAG, "onStop called")
-        mediaPlayer.pause()
+        try {
+            mediaPlayer.pause()
+        } catch (e: Exception) {
+            Log.e(TAG, "failed to pause mediaplayer")
+            try {
+                mediaPlayer.release()
+            } catch (e: Exception) {
+                Log.e(TAG, "failed to pause and release mediaplayer")
+            }
+        }
     }
 
     override fun onDestroy() {
@@ -394,7 +402,10 @@ class MainActivity : Activity(), SensorEventListener {
     /* Authentication Related */
     private fun logoutUser() {
         when (mAuth.currentUser){
-            null -> return
+            null -> {
+                Log.e(TAG, "Tried to logout a non existing user")
+                return
+            }
         }
 
         if (mAuth.currentUser!!.isAnonymous) {
@@ -406,37 +417,6 @@ class MainActivity : Activity(), SensorEventListener {
                         Toast.makeText(this, getString(R.string.user_logged_out_message), Toast.LENGTH_SHORT).show()
                         restartApp()
                     }
-        }
-    }
-
-    // OBS: TODO: Unsafe, delete this later
-    private fun deleteUser(user: FirebaseUser?, callback: ()->Unit) {
-        try {
-            // Database
-            FirebaseDatabase
-                    .getInstance()
-                    .getReference("users/" + user!!.uid)
-                    .removeValue()
-
-            // User
-            user.delete().addOnCompleteListener {
-                if (it.isSuccessful) {
-                    Toast.makeText(this, "Removed user", Toast.LENGTH_SHORT).show()
-                    callback()
-                } else {
-                    if (it.exception is FirebaseAuthRecentLoginRequiredException?) {
-                        // prompt login if user cant delete itself
-                        Toast.makeText(this, getString(R.string.login_to_delete_account), Toast.LENGTH_SHORT).show()
-                        loginUser(SIGN_IN_AND_EXIT)
-                    } else {
-                        Toast.makeText(this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show()
-                        Log.e(TAG, it.exception.toString())
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            Toast.makeText(this, "Failed to delete user", Toast.LENGTH_SHORT).show()
-            Log.e(TAG, e.toString())
         }
     }
 
@@ -493,7 +473,11 @@ class MainActivity : Activity(), SensorEventListener {
     /* Misc */
     private fun restartApp() {
         finish()
-        startActivity(intent)
+        val restartActivity = Intent(applicationContext, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        mediaPlayer.release()
+        startActivity(restartActivity)
     }
 
     private fun startWelcomeActivity() {
