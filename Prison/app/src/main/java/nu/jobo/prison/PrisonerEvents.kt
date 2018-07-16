@@ -1,5 +1,6 @@
 package nu.jobo.prison
 
+import android.support.v4.app.NotificationManagerCompat
 import java.util.*
 
 /**
@@ -12,14 +13,18 @@ class PrisonerEvents(private val mainActivity: MainActivity) {
             Random().nextInt(endInclusive - start) +  start
 
     private fun prisonerFailedEscape() {
-        mainActivity.statusImage.setImageResource(R.drawable.escape_failed)
         mainActivity.setTitle(R.string.prisoner_status_failed_escape)
-        mainActivity.powerCounter.text = "0"
+        mainActivity.statusImage.setImageResource(R.drawable.escape_failed)
+        mainActivity.prisoner = PrisonerData() // reset prisoner
+        mainActivity.dbUpdate {  } // Update db
     }
 
     private fun prisonerEscaped() {
         mainActivity.statusImage.setImageResource(R.drawable.escaped)
         mainActivity.setTitle(R.string.prisoner_status_escaping)
+        mainActivity.escapeNotification()
+        MainActivity.escaped = true
+        mainActivity.initGeofence()
     }
 
     private fun powerRandomRangeIncrease(from: Int, to: Int) {

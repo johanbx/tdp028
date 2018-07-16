@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Prison</string>
+    <string name="prison_bars">Fängelsestänger</string>
+    <string name="anonymous">Anonym Användare</string>
+    <string name="already_logged_in_message">Du är redan inloggad</string>
+    <string name="button_try_escape">Försök Rymma</string>
+    <string name="cant_logout_anonymous_user_warning">Kan inte logga ut anonym användare</string>
+    <string name="fence_notification_inside_message">Vakterna är nöjda</string>
+    <string name="fence_notification_inside_title">Innanför fängelseområdet</string>
+    <string name="fence_notification_outside_message">Vakterna kommer!! Spring!</string>
+    <string name="fence_notification_outside_title">Utanför fängelseområdet</string>
+    <string name="friend_invite_extra_power">Du blev inbjuden av en vän och får starta med 2000 extra power!</string>
+    <string name="given_free_power">Din väninbjudan ger dig 2000 gratis power!</string>
+    <string name="goal_of_game">Syftet med spelet är att få så mycket power som möjligt och fly från fängelset.</string>
+    <string name="keep_new_login_button">Denna nya inloggning</string>
+    <string name="keep_old_login_button">Min gamla inloggning</string>
+    <string name="login_to_delete_account">Var god och logga in igen för att ta bort användaren</string>
+    <string name="on_escape_instructions">För att vinna spelet, spring utanför geofence området innan tiden tar slut</string>
+    <string name="once_escaped">När du har rymt behöver du springa (ja, i verkliga livet) för att komma ut ur fängelset!</string>
+    <string name="prisoner_status_captured">Du Är I Fängelset</string>
+    <string name="prisoner_status_died">Du Dog. Spelet Är Slut.</string>
+    <string name="prisoner_status_escaping">Du Har Rymt! SPRING!!</string>
+    <string name="prisoner_status_failed_escape">ÅH NEJ! Tillbaka till fängelset</string>
+    <string name="prisoner_status_free">OMG Du Är Fri! Spelet Är Slut.</string>
+    <string name="prisoner_status_killed_by_gods">Gudarna Har Dödat Dig. Spelet Är Slut.</string>
+    <string name="prisoner_status_praise_the_sun">PRISA SOLEN!</string>
+    <string name="successful_escape">Du har rymt från din bur! SPRING!</string>
+    <string name="title_activity_settings">Inställningar</string>
+    <string name="unknown_error">Ett okänt error har inträffat</string>
+    <string name="unknown_login_error">Okänt Error: Loginfel</string>
+    <string name="unknown_geofence_transition">Okänt Error: Geofence</string>
+    <string name="user_already_logged_in">Användare existerar. Vilken vill du använda?</string>
+    <string name="user_logged_out_message">Du har loggats ut!</string>
+    <string name="welcome_to_prison">Välkommen till fängelset!</string>
+    <string name="delete_account">Radera Inloggning</string>
+    <string name="sync_cloud_save">Synka Molnsparning</string>
+    <string name="swedish">Svenska</string>
+    <string name="english">Engelska</string>
+    <string name="sound">Ljud</string>
+    <string name="logout">Logga ut</string>
+    <string name="share_game">Dela Spel</string>
+    <string name="settings">Inställningar</string>
+</resources>

@@ -1,39 +1,41 @@
 package nu.jobo.prison
 
 import android.os.Bundle
+import com.google.firebase.analytics.FirebaseAnalytics
 
-class AnalyticEvents(private val mainActivity: MainActivity) {
+class AnalyticEvents(private val mFirebaseAnalytics: FirebaseAnalytics) {
+
     fun shareApp(uid: String, power: Int) {
         val params = Bundle()
         params.putString("user_uid", uid)
         params.putInt("power", power)
-        mainActivity.mFirebaseAnalytics.logEvent("share_app", params)
+        mFirebaseAnalytics.logEvent("share_app", params)
     }
 
     fun wasInvited(uid: String) {
         val params = Bundle()
         params.putString("user_uid", uid)
-        mainActivity.mFirebaseAnalytics.logEvent("was_invited", params)
+        mFirebaseAnalytics.logEvent("was_invited", params)
     }
 
     fun soundSwitch(uid: String, isOn: Boolean) {
         val params = Bundle()
         params.putString("user_uid", uid)
         params.putBoolean("sound_on", isOn)
-        mainActivity.mFirebaseAnalytics.logEvent("sound_switch", params)
+        mFirebaseAnalytics.logEvent("sound_switch", params)
     }
 
-    fun musicSwitch(uid: String, isOn: Boolean) {
+    fun gameWon(uid: String, power: Int) {
         val params = Bundle()
         params.putString("user_uid", uid)
-        params.putBoolean("music_on", isOn)
-        mainActivity.mFirebaseAnalytics.logEvent("music_switch", params)
+        params.putInt("power", power)
+        mFirebaseAnalytics.logEvent("game_won", params)
     }
 
     fun changedLanguage(uid: String, language: String) {
         val params = Bundle()
         params.putString("user_uid", uid)
         params.putString("language", language)
-        mainActivity.mFirebaseAnalytics.logEvent("change_language", params)
+        mFirebaseAnalytics.logEvent("change_language", params)
     }
 }

@@ -23,7 +23,7 @@ import android.support.v4.app.TaskStackBuilder
 class GeofenceTransitionsIntentService : IntentService("GeofenceService") {
 
     companion object {
-        const val TAG = "GEOFENCE"
+        const val TAG = "MY_GEOFENCE"
     }
 
     override fun onHandleIntent(intent: Intent?) {
@@ -48,8 +48,12 @@ class GeofenceTransitionsIntentService : IntentService("GeofenceService") {
                 sendNotification(getString(R.string.fence_notification_inside_title),
                         getString(R.string.fence_notification_inside_message))
             } else {
-                sendNotification(getString(R.string.fence_notification_outside_title),
-                        getString(R.string.fence_notification_outside_message))
+                if (MainActivity.escaped) {
+                    sendNotification("You won the game.", "Click for highscore", true)
+                } else {
+                    sendNotification("You were captured by the guards",
+                            "You were not fast enough")
+                }
             }
 
             // Get the transition details as a String and log it.
@@ -69,7 +73,7 @@ class GeofenceTransitionsIntentService : IntentService("GeofenceService") {
      * Posts a notification in the notification bar when a transition is detected.
      * If the user clicks the notification, control goes to the MainActivity.
      */
-    private fun sendNotification(title: String, message: String) {
+    private fun sendNotification(title: String, message: String, wonGame: Boolean = false) {
         // Get an instance of the Notification manager
         val mNotificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
 
@@ -83,23 +87,25 @@ class GeofenceTransitionsIntentService : IntentService("GeofenceService") {
             mNotificationManager.createNotificationChannel(mChannel)
         }
 
-        // Create an explicit content Intent that "resumes" the main Activity.
-        val notificationIntent = Intent(applicationContext, MainActivity::class.java)
-        notificationIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        notificationIntent.addCategory(Intent.CATEGORY_LAUNCHER)
-        notificationIntent.action = Intent.ACTION_MAIN
+        var notificationPendingIntent: PendingIntent? = null
+        if (wonGame) {
+            val notificationIntent = Intent(applicationContext, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                putExtra(MainActivity.INTENT_WON_GAME, MainActivity.INTENT_WON_GAME)
+            }
 
-        // Construct a task stack.
-        val stackBuilder = TaskStackBuilder.create(this)
+            // Construct a task stack.
+            val stackBuilder = TaskStackBuilder.create(this)
 
-        // Add the main Activity to the task stack as the parent.
-        stackBuilder.addParentStack(MainActivity::class.java)
+            // Add the main Activity to the task stack as the parent.
+            stackBuilder.addParentStack(MainActivity::class.java)
 
-        // Push the content Intent onto the stack.
-        stackBuilder.addNextIntent(notificationIntent)
+            // Push the content Intent onto the stack.
+            stackBuilder.addNextIntent(notificationIntent)
 
-        // Get a PendingIntent containing the entire back stack.
-        val notificationPendingIntent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT)
+            // Get a PendingIntent containing the entire back stack.
+            notificationPendingIntent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT)
+        }
 
         // Get a notification builder that's compatible with platform versions >= 4
         val builder = NotificationCompat.Builder(this)
@@ -110,7 +116,10 @@ class GeofenceTransitionsIntentService : IntentService("GeofenceService") {
                 // to decode the Bitmap.
                 .setContentTitle(title)
                 .setContentText(message)
-                .setContentIntent(notificationPendingIntent)
+
+        if (wonGame) {
+            builder.setContentIntent(notificationPendingIntent)
+        }
 
         // Set the Channel ID for Android O.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

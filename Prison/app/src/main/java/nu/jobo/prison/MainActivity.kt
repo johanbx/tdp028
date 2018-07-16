@@ -16,6 +16,7 @@ import android.support.v4.app.NotificationCompat
 import android.widget.*
 import android.os.Build
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.graphics.Color
 import android.media.MediaPlayer
 import android.preference.PreferenceManager
@@ -23,10 +24,7 @@ import android.support.v4.app.ActivityCompat
 import android.support.v4.app.NotificationManagerCompat
 import android.support.v4.content.ContextCompat
 import android.util.Log
-import com.google.android.gms.location.Geofence
-import com.google.android.gms.location.GeofencingClient
-import com.google.android.gms.location.GeofencingRequest
-import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.*
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
 import com.google.firebase.auth.FirebaseUser
@@ -42,7 +40,7 @@ import kotlinx.android.synthetic.main.activity_main.*
 class MainActivity : Activity(), SensorEventListener {
 
     companion object {
-        const val TAG = "TAG_MAIN"
+        const val TAG = "MY_MAINACTIVITY"
 
         const val POWER_FOR_ESCAPE = 10000
         const val SIGN_IN_AND_ASK = 120
@@ -52,8 +50,6 @@ class MainActivity : Activity(), SensorEventListener {
         const val FIRST_TIME_RUN = "FIRST_TIME_RUN"
 
         const val FENCE_KEY = "FENCE_KEY"
-        const val FENCE_LATITUDE: Double = 59.464997
-        const val FENCE_LONGITUDE: Double = 18.048519
         const val FENCE_RADIUS_METER: Float = 100f
         const val FENCE_EXPIRATION_MILLISECONDS: Long = 200000
 
@@ -62,9 +58,14 @@ class MainActivity : Activity(), SensorEventListener {
         const val INTENT_LOGIN = "INTENT_LOGIN"
         const val INTENT_LOGOUT = "INTENT_LOGOUT"
         const val INTENT_DELETE_ACCOUNT = "INTENT_DELETE_ACCOUNT"
+        const val INTENT_WON_GAME = "INTENT_WON_GAME"
+
+        const val PRISONER_POWER = "PRISONER_POWER"
 
         lateinit var mediaPlayer: MediaPlayer
         var mediaPlayerMuted = false
+
+        var escaped = false
     }
 
     // Authentication Providers (login ui)
@@ -77,18 +78,23 @@ class MainActivity : Activity(), SensorEventListener {
     private var running = false
     private var sensorManager:SensorManager? = null
     private var firstTimeRun = false
+
     var prisoner = PrisonerData()
 
     lateinit var geofencingClient: GeofencingClient
 
     private lateinit var escapingAttemptNotificationBuilder: NotificationCompat.Builder
     private lateinit var prisonerEvents: PrisonerEvents
-    private lateinit var analyticEvents: AnalyticEvents
     private lateinit var fence: Geofence
     private lateinit var remoteConfig: FirebaseRemoteConfig
 
+    private var fenceLatitude: Double = 0.0
+    private var fenceLongitude: Double = 0.0
+
     lateinit var mAuth: FirebaseAuth
     lateinit var mFirebaseAnalytics: FirebaseAnalytics
+    lateinit var mFusedLocationClient: FusedLocationProviderClient
+    lateinit var analyticEvents: AnalyticEvents
 
     lateinit var stepCounter: TextView
     lateinit var statusImage: ImageView
@@ -103,6 +109,7 @@ class MainActivity : Activity(), SensorEventListener {
         checkFirstTimeRun()
     }
 
+    @SuppressLint("MissingPermission")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (firstTimeRun) { return startWelcomeActivity() }
@@ -114,12 +121,18 @@ class MainActivity : Activity(), SensorEventListener {
 
         mAuth = FirebaseAuth.getInstance()
         mFirebaseAnalytics = FirebaseAnalytics.getInstance(this)
+        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
         // Require Location Permission & Setup Geofence
         requirePermission(android.Manifest.permission.ACCESS_FINE_LOCATION,
                 LOCATION_PERMISSION_REQUEST_CODE)
         geofencingClient = LocationServices.getGeofencingClient(this)
-        initGeofence()
+        mFusedLocationClient.lastLocation.addOnCompleteListener {
+            if (it.isSuccessful) {
+                fenceLatitude = it.result.latitude
+                fenceLongitude = it.result.longitude
+            }
+        }
 
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
 
@@ -127,7 +140,7 @@ class MainActivity : Activity(), SensorEventListener {
         ButtonGridView.adapter = ButtonAdapter(this, buttons)
 
         prisonerEvents = PrisonerEvents(this)
-        analyticEvents = AnalyticEvents(this)
+        analyticEvents = AnalyticEvents(mFirebaseAnalytics)
 
         statusImage = findViewById(R.id.image_prisoner_status)
         pushUpCounter = findViewById(R.id.pushUpsValueTextView)
@@ -139,11 +152,21 @@ class MainActivity : Activity(), SensorEventListener {
             prisoner.power = intent.getIntExtra(FRIEND_INVITE_POWER_BONUS, 2000)
             Toast.makeText(applicationContext,
                     getString(R.string.given_free_power), Toast.LENGTH_LONG).show()
+            analyticEvents.wasInvited(mAuth.currentUser!!.uid)
         }
 
         initMediaPlayer()
 
         applyTheme()
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration?) {
+        super.onConfigurationChanged(newConfig)
+        LocaleManager.setLocale(this)
+    }
+
+    override fun attachBaseContext(newBase: Context?) {
+        super.attachBaseContext(LocaleManager.setLocale(newBase!!))
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -230,6 +253,11 @@ class MainActivity : Activity(), SensorEventListener {
         } else if (intent.getStringExtra(INTENT_LOGOUT) == INTENT_LOGOUT) {
             intent.removeExtra(INTENT_LOGOUT)
             logoutUser()
+        } else if (intent.getStringExtra(INTENT_WON_GAME) == INTENT_WON_GAME) {
+            Log.d(TAG, "User won the game")
+            intent.removeExtra(INTENT_WON_GAME)
+            prisonerEvents.eventWon()
+            analyticEvents.gameWon(mAuth.currentUser!!.uid, prisoner.power)
         }
     }
 
@@ -297,8 +325,8 @@ class MainActivity : Activity(), SensorEventListener {
 
         escapingAttemptNotificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.mipmap.ic_launcher_round)
-                .setContentTitle("Test notification")
-                .setContentText("Test text")
+                .setContentTitle(getString(R.string.successful_escape))
+                .setContentText(getString(R.string.on_escape_instructions))
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 // Set the intent that will fire when the user taps the notification
                 .setContentIntent(pendingIntent)
@@ -306,7 +334,7 @@ class MainActivity : Activity(), SensorEventListener {
     }
 
     @SuppressLint("MissingPermission")
-    private fun initGeofence() {
+    fun initGeofence() {
         fence = Geofence.Builder()
                 // Set the request ID of the geofence. This is a string to identify this
                 // geofence.
@@ -314,8 +342,8 @@ class MainActivity : Activity(), SensorEventListener {
 
                 // Set the circular region of this geofence.
                 .setCircularRegion(
-                        FENCE_LATITUDE,
-                        FENCE_LONGITUDE,
+                        fenceLatitude,
+                        fenceLongitude,
                         FENCE_RADIUS_METER
                 )
 
@@ -437,12 +465,17 @@ class MainActivity : Activity(), SensorEventListener {
     // (so new know if we are going to ask the users if they want to keep their
     // current prisonerData or not)
     private fun loginUser(signInIntentCode: Int) {
-        var intent = AuthUI.getInstance()
-                .createSignInIntentBuilder()
-                .setAvailableProviders(providers)
-                .build()
-        oldPrisoner = prisoner
-        startActivityForResult(intent, signInIntentCode)
+        if (mAuth.currentUser!!.isAnonymous) {
+            var intent = AuthUI.getInstance()
+                    .createSignInIntentBuilder()
+                    .setAvailableProviders(providers)
+                    .build()
+            oldPrisoner = prisoner
+            startActivityForResult(intent, signInIntentCode)
+        } else {
+            Toast.makeText(this, getString(R.string.already_logged_in_message),
+                    Toast.LENGTH_SHORT).show()
+        }
     }
 
 
@@ -483,11 +516,13 @@ class MainActivity : Activity(), SensorEventListener {
     }
 
     fun dbUpdate(function: () -> Unit) {
-        val ref = FirebaseDatabase
-                .getInstance()
-                .getReference("users/" + mAuth.currentUser!!.uid)
-        ref.setValue(prisoner)
-        function()
+        if (mAuth.currentUser != null) {
+            val ref = FirebaseDatabase
+                    .getInstance()
+                    .getReference("users/" + mAuth.currentUser!!.uid)
+            ref.setValue(prisoner)
+            function()
+        }
     }
 
     // OBS: onRequestPermissionsResult is required.
@@ -519,7 +554,7 @@ class MainActivity : Activity(), SensorEventListener {
     }
 
     // Temporary
-    private fun escapeNotification() {
+    fun escapeNotification() {
         val notificationManager = NotificationManagerCompat.from(this)
         // notificationId is a unique int for each notification that you must define
         notificationManager.notify(123, escapingAttemptNotificationBuilder.build())
@@ -567,7 +602,20 @@ class MainActivity : Activity(), SensorEventListener {
         val tryEscapeButton: Button = simpleEventButton(
                 R.string.button_try_escape, {prisonerEvents.tryEscape()})
 
+        val settingsButton: Button = simpleEventButton(
+                getString(R.string.settings), {
+            val settingIntent = Intent(this, SettingsActivity::class.java).run {
+                putExtra(PRISONER_POWER, prisoner.power)
+            }
+            settingIntent.flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+            startActivityIfNeeded(settingIntent, 0)
+        })
+
         /* Temporary Buttons */
+        val tempAdd1000PowerButton: Button = simpleEventButton(
+                "+1000 Power", {prisonerEvents.tempAdd1000Power()})
+
+        /*
         val tempCapturedButton: Button = simpleEventButton(
                 "Captured", {prisonerEvents.eventCaptured()})
 
@@ -577,9 +625,6 @@ class MainActivity : Activity(), SensorEventListener {
         val tempPraiseTheSunButton: Button = simpleEventButton(
                 "Praise Sun", {prisonerEvents.eventPraiseTheSun()})
 
-        val tempAdd1000PowerButton: Button = simpleEventButton(
-                "+1000 Power", {prisonerEvents.tempAdd1000Power()})
-
         val tempGodKillButton: Button = simpleEventButton(
                 "God Kill", {prisonerEvents.eventGodKill()})
 
@@ -588,41 +633,24 @@ class MainActivity : Activity(), SensorEventListener {
 
         val tempEscapeNotificationButton: Button = simpleEventButton(
                 "Notify", {escapeNotification()})
-
-        val tempShareButton: Button = simpleEventButton(
-                "Share App", {
-            analyticEvents.shareApp(mAuth.currentUser!!.uid, prisoner.power)
-
-            val shortLink = "https://prison.page.link/invite"
-            val msg =  "I found this awesome game called Prison! Can you " +
-                    "escape before I can? Can you beat my ${prisoner.power} power? $shortLink"
-            val sendIntent = Intent()
-            sendIntent.action = Intent.ACTION_SEND
-            sendIntent.putExtra(Intent.EXTRA_TEXT, msg)
-            sendIntent.type = "text/plain"
-            startActivity(sendIntent)
-        })
-
-        val tempSettingsButton: Button = simpleEventButton(
-                "Settings", {
-            val settingIntent = Intent(this, SettingsActivity::class.java)
-            settingIntent.flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
-            startActivityIfNeeded(settingIntent, 0)
-        })
+                */
 
         return arrayOf<Button>(
+                tempAdd1000PowerButton,
                 pushUpButton,
                 sitUpButton,
+                tryEscapeButton,
+                settingsButton
+                        /*
                 tempCapturedButton,
                 tempDiedButton,
                 tempPraiseTheSunButton,
-                tempAdd1000PowerButton,
+
                 tempGodKillButton,
-                tryEscapeButton,
+
                 tempWonButton,
-                tempEscapeNotificationButton,
-                tempShareButton,
-                tempSettingsButton)
+                tempEscapeNotificationButton,*/
+                )
     }
 
     /* Geofence-related */
