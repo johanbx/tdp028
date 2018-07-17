@@ -3,6 +3,7 @@ package nu.jobo.prison
 import android.annotation.SuppressLint
 import android.app.*
 import android.content.Context
+import android.content.DialogInterface
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -27,12 +28,11 @@ import android.util.Log
 import android.view.View
 import com.google.android.gms.location.*
 import com.google.firebase.analytics.FirebaseAnalytics
-import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
-import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import com.google.firebase.dynamiclinks.FirebaseDynamicLinks
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings
 import kotlinx.android.synthetic.main.activity_main.*
@@ -57,19 +57,21 @@ class MainActivity : Activity(), SensorEventListener {
         const val LOCATION_PERMISSION_REQUEST_CODE = 345
 
         const val INTENT_LOGIN = "INTENT_LOGIN"
-        const val INTENT_LOGOUT = "INTENT_LOGOUT"
-        const val INTENT_DELETE_ACCOUNT = "INTENT_DELETE_ACCOUNT"
         const val INTENT_WON_GAME = "INTENT_WON_GAME"
+        const val INTENT_LOGIN_FORCE = "INTENT_LOGIN_FORCE"
 
         const val PRISONER_POWER = "PRISONER_POWER"
 
         const val MUSIC_POSITION = "MUSIC_POSITION"
+        const val VOLUME_MUTED = "VOLUME_MUTED"
 
         lateinit var mediaPlayer: MediaPlayer
-        var mediaPlayerMuted = false
 
         var escaped = false
     }
+
+    var prisoner = PrisonerData()
+    var startingPower = 0
 
     // Authentication Providers (login ui)
     private var providers = Arrays.asList(
@@ -77,27 +79,23 @@ class MainActivity : Activity(), SensorEventListener {
             AuthUI.IdpConfig.GoogleBuilder().build(),
             AuthUI.IdpConfig.FacebookBuilder().build())
 
-
     private var running = false
     private var sensorManager:SensorManager? = null
     private var firstTimeRun = false
-
-    var prisoner = PrisonerData()
-
-    lateinit var geofencingClient: GeofencingClient
 
     private lateinit var escapingAttemptNotificationBuilder: NotificationCompat.Builder
     private lateinit var prisonerEvents: PrisonerEvents
     private lateinit var fence: Geofence
     private lateinit var remoteConfig: FirebaseRemoteConfig
 
+    private lateinit var geofencingClient: GeofencingClient
     private var fenceLatitude: Double = 0.0
     private var fenceLongitude: Double = 0.0
 
-    lateinit var mAuth: FirebaseAuth
-    lateinit var mFirebaseAnalytics: FirebaseAnalytics
-    lateinit var mFusedLocationClient: FusedLocationProviderClient
-    lateinit var analyticEvents: AnalyticEvents
+    private lateinit var mAuth: FirebaseAuth
+    private lateinit var mFirebaseAnalytics: FirebaseAnalytics
+    private lateinit var mFusedLocationClient: FusedLocationProviderClient
+    private lateinit var analyticEvents: AnalyticEvents
 
     lateinit var stepCounter: TextView
     lateinit var statusImage: ImageView
@@ -106,19 +104,11 @@ class MainActivity : Activity(), SensorEventListener {
     lateinit var powerCounter: TextView
     lateinit var oldPrisoner: PrisonerData
 
-    /* "On" events */
-    public override fun onStart() {
-        super.onStart()
-        checkFirstTimeRun()
-    }
-
+    // "On" events
     @SuppressLint("MissingPermission")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         Log.d(TAG, "onCreate called")
-
-        if (firstTimeRun) { return startWelcomeActivity() }
         setContentView(R.layout.activity_main)
 
         initRemoteConfig()
@@ -129,8 +119,9 @@ class MainActivity : Activity(), SensorEventListener {
         mAuth = FirebaseAuth.getInstance()
         mFirebaseAnalytics = FirebaseAnalytics.getInstance(this)
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+        prisonerEvents = PrisonerEvents(this)
+        analyticEvents = AnalyticEvents(mFirebaseAnalytics)
 
-        // Require Location Permission & Setup Geofence
         requirePermission(android.Manifest.permission.ACCESS_FINE_LOCATION,
                 LOCATION_PERMISSION_REQUEST_CODE)
         geofencingClient = LocationServices.getGeofencingClient(this)
@@ -145,25 +136,42 @@ class MainActivity : Activity(), SensorEventListener {
 
         val buttons = initButtons()
         ButtonGridView.adapter = ButtonAdapter(this, buttons)
-
-        prisonerEvents = PrisonerEvents(this)
-        analyticEvents = AnalyticEvents(mFirebaseAnalytics)
-
         statusImage = findViewById(R.id.image_prisoner_status)
         pushUpCounter = findViewById(R.id.pushUpsValueTextView)
         sitUpCounter = findViewById(R.id.sitUpsValueTextView)
         powerCounter = findViewById(R.id.powerValueTextView)
         stepCounter = findViewById(R.id.stepsValueTextView)
 
-        if (prisoner.power == 0 && intent.getIntExtra(FRIEND_INVITE_POWER_BONUS, 0) != 0) {
-            prisoner.power = intent.getIntExtra(FRIEND_INVITE_POWER_BONUS, 2000)
-            Toast.makeText(applicationContext,
-                    getString(R.string.given_free_power), Toast.LENGTH_LONG).show()
-            analyticEvents.wasInvited(mAuth.currentUser!!.uid)
-        }
+        FirebaseDynamicLinks.getInstance().getDynamicLink(intent)
+                .addOnFailureListener{
+                    Log.e(MainActivity.TAG, it.toString())}
+                .addOnSuccessListener {
+                    if (it != null) {
+                        startingPower = 2000 }}
 
+        loginUserOnStart()
+
+        setTitle(R.string.prisoner_status_captured)
         initMediaPlayer(savedInstanceState?.getInt(MUSIC_POSITION, 0)?: 0)
     }
+
+    /*
+    fun checkFriendInvite() {
+        if (prisoner.power == 0 &&
+                intent.getIntExtra(FRIEND_INVITE_POWER_BONUS, 0) != 0) {
+            prisoner.power = intent.getIntExtra(FRIEND_INVITE_POWER_BONUS, 2000)
+            if (mAuth.currentUser?.isAnonymous?:true) {
+                Toast.makeText(applicationContext,
+                        getString(R.string.given_free_power), Toast.LENGTH_LONG).show()
+                analyticEvents.wasInvited(mAuth.currentUser!!.uid)
+            } else {
+                Toast.makeText(applicationContext,
+                        getString(R.string.already_given_power), Toast.LENGTH_LONG).show()
+            }
+
+        }
+    }
+    */
 
     override fun onSaveInstanceState(outState: Bundle?) {
         outState?.run {
@@ -183,7 +191,6 @@ class MainActivity : Activity(), SensorEventListener {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-
         Log.d(TAG, "OnActivityResult called")
 
         if (data != null) {
@@ -232,8 +239,9 @@ class MainActivity : Activity(), SensorEventListener {
     }
 
     override fun onNewIntent(intent: Intent?) {
-        if (intent != null)
+        if (intent != null) {
             setIntent(intent)
+        }
     }
 
     // Source for step counter:
@@ -242,12 +250,12 @@ class MainActivity : Activity(), SensorEventListener {
         super.onResume()
         Log.d(TAG, "onResume called")
 
-        /* Media player */
+        // Media player
         if (!mediaPlayer.isPlaying) {
             mediaPlayer.start()
         }
 
-        /* Steps */
+        // Steps
         running = true
         val stepsSensor = sensorManager?.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR)
 
@@ -257,12 +265,15 @@ class MainActivity : Activity(), SensorEventListener {
             sensorManager?.registerListener(this, stepsSensor, SensorManager.SENSOR_DELAY_UI)
         }
 
-        /* Intents */
+        // Intents
         if (intent.getStringExtra(INTENT_LOGIN) == INTENT_LOGIN) {
             intent.removeExtra(INTENT_LOGIN)
-            loginUser(SIGN_IN_AND_ASK)
-        } else if (intent.getStringExtra(INTENT_DELETE_ACCOUNT) == INTENT_DELETE_ACCOUNT){
-            intent.removeExtra(INTENT_DELETE_ACCOUNT)
+            if (intent.getStringExtra(INTENT_LOGIN_FORCE) == INTENT_LOGIN_FORCE) {
+                intent.removeExtra(INTENT_LOGIN_FORCE)
+                loginUser(SIGN_IN_AND_EXIT, true)
+            } else {
+                loginUser(SIGN_IN_AND_ASK)
+            }
         } else if (intent.getStringExtra(INTENT_WON_GAME) == INTENT_WON_GAME) {
             Log.d(TAG, "User won the game")
             intent.removeExtra(INTENT_WON_GAME)
@@ -279,31 +290,37 @@ class MainActivity : Activity(), SensorEventListener {
 
     override fun onStop() {
         super.onStop()
-        mediaPlayer.pause()
         Log.d(TAG, "onStop called")
+        mediaPlayer.pause()
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        mediaPlayer.release()
-    }
-
-    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-    }
-
-    override fun onSensorChanged(event: SensorEvent?) {
-        if (running) {
-            if (event != null) {
-                prisonerEvents.step()
-            }
+        try {
+            mediaPlayer.release()
+        } catch (e: UninitializedPropertyAccessException) {
+            Log.e(TAG, "Mediaplayer could not be released. " +
+                    "This always occurs on first startup")
         }
     }
 
-    /* Init:s */
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+
+    override fun onSensorChanged(event: SensorEvent?) {
+        if (running && event != null) {
+            prisonerEvents.step()
+        }
+    }
+
+    // Init:s
     private fun initMediaPlayer(musicPosition: Int = 0) {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(applicationContext)
         mediaPlayer = MediaPlayer.create(applicationContext, R.raw.background_music)
         mediaPlayer.seekTo(musicPosition)
         mediaPlayer.isLooping = true
+        if (prefs.getBoolean(VOLUME_MUTED, false)) {
+            mediaPlayer.setVolume(0.0f, 0.0f)
+        }
         mediaPlayer.start()
     }
 
@@ -322,9 +339,6 @@ class MainActivity : Activity(), SensorEventListener {
     }
 
     private fun initNotification(){
-        // Create an explicit intent for an Activity in your app
-        // This type of intent remembers the counter values, source:
-        // https://stackoverflow.com/questions/5502427/resume-application-and-stack-from-notification
         val intent = Intent(this, MainActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
         intent.addCategory(Intent.CATEGORY_LAUNCHER)
@@ -337,47 +351,28 @@ class MainActivity : Activity(), SensorEventListener {
                 .setContentTitle(getString(R.string.successful_escape))
                 .setContentText(getString(R.string.on_escape_instructions))
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                // Set the intent that will fire when the user taps the notification
                 .setContentIntent(pendingIntent)
-                .setAutoCancel(true) // removes notification on tap
+                .setAutoCancel(true)
     }
 
     @SuppressLint("MissingPermission")
     fun initGeofence() {
         fence = Geofence.Builder()
-                // Set the request ID of the geofence. This is a string to identify this
-                // geofence.
                 .setRequestId(FENCE_KEY)
-
-                // Set the circular region of this geofence.
                 .setCircularRegion(
                         fenceLatitude,
                         fenceLongitude,
-                        FENCE_RADIUS_METER
-                )
-
-                // Set the expiration duration of the geofence. This geofence gets automatically
-                // removed after this period of time.
+                        FENCE_RADIUS_METER)
                 .setExpirationDuration(FENCE_EXPIRATION_MILLISECONDS)
-
-
-                // Set the transition types of interest. Alerts are only generated for these
-                // transition. We track entry and exit transitions in this sample.
                 .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER or Geofence.GEOFENCE_TRANSITION_EXIT)
-
-                // Create the geofence.
                 .build()
 
         geofencingClient.addGeofences(getGeofencingRequest(), geofencePendingIntent)?.run {
             addOnSuccessListener {
                 Toast.makeText(applicationContext, "success: Geofences added", Toast.LENGTH_SHORT).show()
-                // Geofences added
-                // ...
             }
             addOnFailureListener {
                 Toast.makeText(applicationContext, "failure: Geofences not added", Toast.LENGTH_SHORT).show()
-                // Failed to add geofences
-                // ...
             }
         }
     }
@@ -402,26 +397,7 @@ class MainActivity : Activity(), SensorEventListener {
         }
     }
 
-    /* Authentication Related */
-    private fun logoutUser() {
-        when (mAuth.currentUser){
-            null -> {
-                Log.e(TAG, "Tried to logout a non existing user")
-                return
-            }
-        }
-
-        if (mAuth.currentUser!!.isAnonymous) {
-            Toast.makeText(this, getString(R.string.cant_logout_anonymous_user_warning), Toast.LENGTH_SHORT).show()
-        } else {
-            AuthUI.getInstance()
-                    .signOut(this)
-                    .addOnCompleteListener {
-                        Toast.makeText(this, getString(R.string.user_logged_out_message), Toast.LENGTH_SHORT).show()
-                        restartApp()
-                    }
-        }
-    }
+    // Authentication Related (Mostly moved to SettingsActivity
 
     private fun saveCurrentValuesDialog(saveCurrentValues: (Boolean) -> Unit) {
         val builder = AlertDialog.Builder(this)
@@ -443,12 +419,9 @@ class MainActivity : Activity(), SensorEventListener {
     }
 
     // OBS: onActivityResult for actual logic
-    // TODO: find a way to delete anonymous users after a login
-    // TODO: find a way to see if an account already exist
-    // (so new know if we are going to ask the users if they want to keep their
-    // current prisonerData or not)
-    private fun loginUser(signInIntentCode: Int) {
-        if (mAuth.currentUser!!.isAnonymous) {
+    // TODO: See Project in Github
+    private fun loginUser(signInIntentCode: Int, force: Boolean = false) {
+        if (mAuth.currentUser!!.isAnonymous || force) {
             var intent = AuthUI.getInstance()
                     .createSignInIntentBuilder()
                     .setAvailableProviders(providers)
@@ -466,14 +439,14 @@ class MainActivity : Activity(), SensorEventListener {
         mAuth.signInAnonymously()
                 .addOnCompleteListener {
                     initOnDatabaseChanges()
+                    startWelcomeDialog(startingPower > 0)
                 }
                 .addOnFailureListener {
                     Toast.makeText(this, getString(R.string.unknown_login_error), Toast.LENGTH_SHORT).show()
-                    finish()
-                }
+                    finish() }
     }
 
-    /* Misc */
+    // Misc
     private fun restartApp() {
         finish()
         val restartActivity = Intent(applicationContext, MainActivity::class.java).apply {
@@ -483,22 +456,25 @@ class MainActivity : Activity(), SensorEventListener {
         startActivity(restartActivity)
     }
 
-    private fun startWelcomeActivity() {
-        val intent = Intent(applicationContext, WelcomeActivity::class.java)
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-        startActivity(intent)
-        finish()
-    }
-
-    private fun checkFirstTimeRun() {
+    private fun startWelcomeDialog(wasInvited: Boolean = false) {
         val prefs = PreferenceManager.getDefaultSharedPreferences(applicationContext)
         firstTimeRun = prefs.getBoolean(FIRST_TIME_RUN, true)
         if (firstTimeRun) {
             prefs.edit().putBoolean(FIRST_TIME_RUN, false).commit()
-            return startWelcomeActivity()
-        } else {
-            loginUserOnStart()
-            setTitle(R.string.prisoner_status_captured)
+            var inviteMsg = ""
+            when (wasInvited) {
+                true -> inviteMsg = getString(R.string.friend_invite_extra_power)
+                false -> inviteMsg = ""
+            }
+            val alertDialogBuilder = AlertDialog.Builder(this)
+            alertDialogBuilder
+                    .setMessage(
+                            getString(R.string.welcome_to_prison) + "\n" +
+                                    getString(R.string.goal_of_game) + "\n" +
+                                    getString(R.string.on_escape_instructions) + "\n" +
+                                    inviteMsg)
+                    .create()
+                    .show()
         }
     }
 
@@ -525,16 +501,12 @@ class MainActivity : Activity(), SensorEventListener {
     }
 
     private fun createNotificationChannel() {
-        // Create the NotificationChannel, but only on API 26+ because
-        // the NotificationChannel class is new and not in the support library
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val name = getString(R.string.channel_name)
             val description = getString(R.string.channel_description)
             val importance = NotificationManager.IMPORTANCE_DEFAULT
             val channel = NotificationChannel(CHANNEL_ID, name, importance)
             channel.description = description
-            // Register the channel with the system; you can't change the importance
-            // or other notification behaviors after this
             val notificationManager = getSystemService(NotificationManager::class.java)
             notificationManager!!.createNotificationChannel(channel)
         }
@@ -543,11 +515,10 @@ class MainActivity : Activity(), SensorEventListener {
     // Temporary
     fun escapeNotification() {
         val notificationManager = NotificationManagerCompat.from(this)
-        // notificationId is a unique int for each notification that you must define
         notificationManager.notify(123, escapingAttemptNotificationBuilder.build())
     }
 
-    /* UI-related */
+    // UI-related
     private fun updateUI() {
         if (mAuth.currentUser?.displayName.isNullOrEmpty()) {
             usernameTextView.text = getString(R.string.anonymous)
@@ -601,49 +572,14 @@ class MainActivity : Activity(), SensorEventListener {
             startActivityIfNeeded(settingIntent, 0)
         })
 
-        /* Temporary Buttons */
-        val tempAdd1000PowerButton: Button = simpleEventButton(
-                "+1000 Power", {prisonerEvents.tempAdd1000Power()})
-
-        /*
-        val tempCapturedButton: Button = simpleEventButton(
-                "Captured", {prisonerEvents.eventCaptured()})
-
-        val tempDiedButton: Button = simpleEventButton(
-                "Died", {prisonerEvents.died()})
-
-        val tempPraiseTheSunButton: Button = simpleEventButton(
-                "Praise Sun", {prisonerEvents.eventPraiseTheSun()})
-
-        val tempGodKillButton: Button = simpleEventButton(
-                "God Kill", {prisonerEvents.eventGodKill()})
-
-        val tempWonButton: Button = simpleEventButton(
-                "Win", {prisonerEvents.eventWon()})
-
-        val tempEscapeNotificationButton: Button = simpleEventButton(
-                "Notify", {escapeNotification()})
-                */
-
         return arrayOf<Button>(
-                tempAdd1000PowerButton,
                 pushUpButton,
                 sitUpButton,
                 tryEscapeButton,
-                settingsButton
-                        /*
-                tempCapturedButton,
-                tempDiedButton,
-                tempPraiseTheSunButton,
-
-                tempGodKillButton,
-
-                tempWonButton,
-                tempEscapeNotificationButton,*/
-                )
+                settingsButton)
     }
 
-    /* Geofence-related */
+    // Geofence-related
     private fun getGeofencingRequest(): GeofencingRequest {
         return GeofencingRequest.Builder().apply {
             setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
@@ -653,8 +589,6 @@ class MainActivity : Activity(), SensorEventListener {
 
     private val geofencePendingIntent: PendingIntent by lazy {
         val intent = Intent(this, GeofenceTransitionsIntentService::class.java)
-        // We use FLAG_UPDATE_CURRENT so that we get the same pending intent back when calling
-        // addGeofences() and removeGeofences().
         PendingIntent.getService(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
     }
 }

@@ -1,17 +1,15 @@
 package nu.jobo.prison
 
 import android.app.Activity
-import android.app.PendingIntent
-import android.app.TaskStackBuilder
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
+import android.preference.PreferenceManager
 import android.util.Log
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.android.synthetic.main.activity_settings.*
-import android.os.LocaleList
 import android.widget.Toast
 import com.firebase.ui.auth.AuthUI
 import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
@@ -25,9 +23,9 @@ class SettingsActivity : Activity() {
         const val LANGUAGE_CHANGED = "LANGUAGE_CHANGED"
     }
 
-    lateinit var mFirebaseAnalytics: FirebaseAnalytics
-    lateinit var mAuth: FirebaseAuth
-    lateinit var analyticEvents: AnalyticEvents
+    private lateinit var mFirebaseAnalytics: FirebaseAnalytics
+    private lateinit var mAuth: FirebaseAuth
+    private lateinit var analyticEvents: AnalyticEvents
 
     override fun onConfigurationChanged(newConfig: Configuration?) {
         super.onConfigurationChanged(newConfig)
@@ -42,11 +40,13 @@ class SettingsActivity : Activity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)
 
+        val prefs = PreferenceManager.getDefaultSharedPreferences(applicationContext)
+
         mFirebaseAnalytics = FirebaseAnalytics.getInstance(this)
         mAuth = FirebaseAuth.getInstance()
 
         analyticEvents = AnalyticEvents(mFirebaseAnalytics)
-        soundSwitch.isChecked = !MainActivity.mediaPlayerMuted
+        soundSwitch.isChecked = !prefs.getBoolean(MainActivity.VOLUME_MUTED, false)
 
         syncCloudSaveButton.setOnClickListener { syncCloudSave() }
         deleteAccountButton.setOnClickListener { deleteUser() }
@@ -54,10 +54,13 @@ class SettingsActivity : Activity() {
         shareGameButton.setOnClickListener { shareGame() }
 
         soundSwitch.setOnCheckedChangeListener { _, b ->
-            MainActivity.mediaPlayerMuted = !b
+            val prefs = PreferenceManager.getDefaultSharedPreferences(applicationContext)
+            prefs.edit().putBoolean(MainActivity.VOLUME_MUTED, !b).commit()
             when (b) {
                 false -> MainActivity.mediaPlayer.setVolume(0.0f,0.0f)
-                true -> MainActivity.mediaPlayer.setVolume(1.0f,1.0f)
+                true -> {
+                    MainActivity.mediaPlayer.setVolume(1.0f,1.0f)
+                }
             }
         }
 
@@ -81,17 +84,20 @@ class SettingsActivity : Activity() {
         val shortLink = "https://prison.page.link/invite"
         val msg =  "I found this awesome game called Prison! Can you " +
                 "escape before I can? Can you beat my $power power? $shortLink"
-        val sendIntent = Intent()
-        sendIntent.action = Intent.ACTION_SEND
-        sendIntent.putExtra(Intent.EXTRA_TEXT, msg)
-        sendIntent.type = "text/plain"
-        refreshActivity()
+        val shareIntent = Intent()
+        shareIntent.action = Intent.ACTION_SEND
+        shareIntent.putExtra(Intent.EXTRA_TEXT, msg)
+        shareIntent.type = "text/plain"
+        startActivity(shareIntent)
     }
 
-    private fun syncCloudSave() {
+    private fun syncCloudSave(force: Boolean = false) {
         val loginOnMainActivity = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
             putExtra(MainActivity.INTENT_LOGIN, MainActivity.INTENT_LOGIN)
+            if (force) {
+                putExtra(MainActivity.INTENT_LOGIN_FORCE, MainActivity.INTENT_LOGIN_FORCE)
+            }
         }
         startActivity(loginOnMainActivity)
         finish()
@@ -119,7 +125,7 @@ class SettingsActivity : Activity() {
     private fun logoutUser() {
         when (mAuth.currentUser){
             null -> {
-                Log.e(TAG, "Tried to logout a non existing user")
+                Log.e(TAG, getString(R.string.error_logout_null_user))
                 return
             }
         }
@@ -147,13 +153,13 @@ class SettingsActivity : Activity() {
             // User
             mAuth.currentUser!!.delete().addOnCompleteListener {
                 if (it.isSuccessful) {
-                    Toast.makeText(this, "Removed user", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.removed_user), Toast.LENGTH_SHORT).show()
                     restartApp()
                 } else {
-                    if (it.exception is FirebaseAuthRecentLoginRequiredException?) {
+                    if (it.exception is FirebaseAuthRecentLoginRequiredException) {
                         // prompt login if user cant delete itself
                         Toast.makeText(this, getString(R.string.login_to_delete_account), Toast.LENGTH_SHORT).show()
-                        syncCloudSave()
+                        syncCloudSave(true)
                     } else {
                         Toast.makeText(this, getString(R.string.unknown_error), Toast.LENGTH_SHORT).show()
                         Log.e(TAG, it.exception.toString())
@@ -161,7 +167,7 @@ class SettingsActivity : Activity() {
                 }
             }
         } catch (e: Exception) {
-            Toast.makeText(this, "Failed to delete user", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.failed_to_delete_user), Toast.LENGTH_SHORT).show()
             Log.e(TAG, e.toString())
         }
     }

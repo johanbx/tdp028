@@ -65,4 +65,9 @@
     <string name="push_ups">PUSH UPS</string>
     <string name="sit_ups">SIT UPS</string>
     <string name="power">POWER</string>
+    <string name="error_logout_null_user">Tried to logout a non existing user</string>
+    <string name="removed_user">Removed user</string>
+    <string name="failed_to_delete_user">Failed to delete user</string>
+    <string name="already_given_power">You have already been given power</string>
+    <string name="start_the_game">Start the game!</string>
 </resources>

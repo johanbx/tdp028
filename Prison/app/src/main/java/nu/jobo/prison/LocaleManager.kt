@@ -3,11 +3,8 @@ package nu.jobo.prison
 import android.content.Context
 import android.content.res.Configuration
 import android.os.Build
-import android.os.Build.VERSION.SDK_INT
 import android.preference.PreferenceManager
 import java.util.*
-import android.preference.PreferenceManager.getDefaultSharedPreferences
-
 
 
 // Source: https://proandroiddev.com/change-language-programmatically-at-runtime-on-android-5e6bc15c758

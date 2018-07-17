@@ -1,10 +1,5 @@
 <resources>
 
-    <style name="defaultAlterDialog" parent="android:Widget.Material.Light.ButtonBar.AlertDialog">
-        <item name="android:text">@color/white</item>
-        <item name="android:windowBackground">@drawable/dialog_border</item>
-    </style>
-
     <style name="background">
         <item name="android:background">@color/colorPrisonPrimary</item>
     </style>

@@ -1,11 +1,7 @@
 package nu.jobo.prison
 
-import android.support.v4.app.NotificationManagerCompat
 import java.util.*
 
-/**
- * Created by wirle on 2018-07-04.
- */
 class PrisonerEvents(private val mainActivity: MainActivity) {
 
     // Source: https://stackoverflow.com/questions/45685026/how-can-i-get-a-random-number-in-kotlin
@@ -37,33 +33,12 @@ class PrisonerEvents(private val mainActivity: MainActivity) {
         mainActivity.dbUpdate {  }
     }
 
-    fun died() {
-        mainActivity.statusImage.setImageResource(R.drawable.died)
-        mainActivity.setTitle(R.string.prisoner_status_died)
-    }
-
-    /* Events */
-    fun eventGodKill() {
-        mainActivity.statusImage.setImageResource(R.drawable.godkill)
-        mainActivity.setTitle(R.string.prisoner_status_killed_by_gods)
-    }
-
-    fun eventCaptured() {
-        mainActivity.statusImage.setImageResource(R.drawable.bars)
-        mainActivity.setTitle(R.string.prisoner_status_captured)
-    }
-
-    fun eventPraiseTheSun() {
-        mainActivity.statusImage.setImageResource(R.drawable.sunpraise)
-        mainActivity.setTitle(R.string.prisoner_status_praise_the_sun)
-    }
-
     fun eventWon() {
         mainActivity.statusImage.setImageResource(R.drawable.free)
         mainActivity.setTitle(R.string.prisoner_status_free)
     }
 
-    /* Actions */
+    // Actions
     fun pushUp() {
         mainActivity.prisoner.pushUps = mainActivity.prisoner.pushUps.inc()
         mainActivity.pushUpCounter.text = mainActivity.prisoner.pushUps.toString()
@@ -94,10 +69,5 @@ class PrisonerEvents(private val mainActivity: MainActivity) {
         else {
             prisonerFailedEscape()
         }
-    }
-
-    /* Temporary */
-    fun tempAdd1000Power() {
-        powerIncrease(1000)
     }
 }
