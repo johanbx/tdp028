@@ -41,4 +41,5 @@
     <string name="logout">Logga ut</string>
     <string name="share_game">Dela Spel</string>
     <string name="settings">Inställningar</string>
+    <string name="steps">STEG</string>
 </resources>

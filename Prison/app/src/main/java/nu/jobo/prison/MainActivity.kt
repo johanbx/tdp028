@@ -122,6 +122,7 @@ class MainActivity : Activity(), SensorEventListener {
         setContentView(R.layout.activity_main)
 
         initRemoteConfig()
+        applyTheme()
         createNotificationChannel()
         initNotification()
 
@@ -162,8 +163,6 @@ class MainActivity : Activity(), SensorEventListener {
         }
 
         initMediaPlayer(savedInstanceState?.getInt(MUSIC_POSITION, 0)?: 0)
-
-        applyTheme()
     }
 
     override fun onSaveInstanceState(outState: Bundle?) {
@@ -563,7 +562,10 @@ class MainActivity : Activity(), SensorEventListener {
 
     // Used in Remote Configuration
     private fun applyTheme() {
-        powerTextView.setTextColor(Color.parseColor(remoteConfig.getString("theme_power_text_color")))
+        powerTextView.setTextColor(Color.parseColor(remoteConfig.getString("power_text_view_color")))
+        stepsTextView.setTextColor(Color.parseColor(remoteConfig.getString("steps_text_view_color")))
+        pushUpsTextView.setTextColor(Color.parseColor(remoteConfig.getString("push_ups_text_view_color")))
+        sitUpsTextView.setTextColor(Color.parseColor(remoteConfig.getString("sit_ups_text_view_color")))
     }
 
     private fun simpleEventButton(resourceId: Int, function: () -> Unit): Button {

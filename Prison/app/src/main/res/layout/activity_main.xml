@@ -26,7 +26,7 @@
                 android:layout_width="107dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="POWER"
+                android:text="@string/power"
                 android:textColor="@color/white"
                 android:textSize="24sp"
                 android:textStyle="bold" />
@@ -57,7 +57,7 @@
                 android:layout_width="100dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="STEPS"
+                android:text="@string/steps"
                 android:textColor="@color/white"
                 android:textSize="18sp"
                 android:textStyle="bold" />
@@ -86,7 +86,7 @@
                 android:layout_width="100dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="PUSH UPS"
+                android:text="@string/push_ups"
                 android:textColor="@color/white"
                 android:textSize="18sp"
                 android:textStyle="bold" />
@@ -115,7 +115,7 @@
                 android:layout_width="100dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="SIT UPS"
+                android:text="@string/sit_ups"
                 android:textColor="@color/white"
                 android:textSize="18sp"
                 android:textStyle="bold" />

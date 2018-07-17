@@ -6,7 +6,19 @@
         <value></value>
     </entry>
     <entry>
-        <key>theme_power_text_color</key>
+        <key>power_text_view_color</key>
+        <value>#ffffff</value>
+    </entry>
+    <entry>
+        <key>steps_text_view_color</key>
+        <value>#ffffff</value>
+    </entry>
+    <entry>
+        <key>push_ups_text_view_color</key>
+        <value>#ffffff</value>
+    </entry>
+    <entry>
+        <key>sit_ups_text_view_color</key>
         <value>#ffffff</value>
     </entry>
 </defaultsMap>
