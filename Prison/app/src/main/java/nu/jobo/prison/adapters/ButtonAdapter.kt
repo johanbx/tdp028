@@ -1,4 +1,4 @@
-package nu.jobo.prison
+package nu.jobo.prison.adapters
 
 import android.content.Context
 import android.view.View
