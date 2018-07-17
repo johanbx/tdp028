@@ -3,44 +3,45 @@ Instructions: https://www.ida.liu.se/~TDP028/index.sv.shtml
 Examinations: https://www.ida.liu.se/~TDP028/exam/index.sv.shtml  
 
 # The Prison
-
-## Planning
-In this course some API:s are required to follow.  
-Firebase is also a required and have it's own requirements.  
-I should plan for all these API:s in advance  
+Welcome to prison! Can you gather the power that is required, break out and run away from the guards?
 
 ### API
 #### Notifications
-Might be able to combine with location.  
-When the user/prisoner leaves the prison (my home) a notification pops up to the prioner, saying that the cops are on their way.  
+Notifications is sent once the prisoner tries to escape (triggers on initial enter geofence)  
+Another notification is sent once the prisoner escapes the prison area (trigger on geofence exit)
 #### Multi Language Support
-No specific planning is required for this.
+Two languages are supported: Swedish and English. The user can go to the settingsmenu to switch between the two languages on the go. The languages are automatically used if the language on the device is either Swedish or English.
 #### Location
-Geofencing is required.  
-Dark grey background with bars when in prison (my home) and green with vegatation and blue sky when outside the prison.
-
+Location is used to "start" the prisonarea once the user tries to escape. The location is also a requirement for the app to start.
 ### Firebase
 #### Analythics
-Some thoughts:
-- Downloads?
-- Which page the user is on.
-- What buttons the user clicks on.
-- When a user gets a notification.
-- If the notification is clicked on?
+5 Events are logged:
+- The user shares the app
+- The user was invited from a dynamic link
+- The sound was switched (on/off)
+- The user won the game
+- The user changed the language (English/Swedish)
 #### Authentication
-- Login anonymously
-- Google login.
-- Facebook login?
-- Convert anonymous login to Google or Facebook.
+4 Ways of logging in is supported
+- All users are automatically logged in as anonymous users (forced)
+- The anonymous user can "sync" the data to
+  - Google Login
+  - Facebook Login
+  - Provided Email & Password
 #### Cloud Functions
-- Send welcome message by email when user create an account with their email.
+- The oncreate user cloud function is triggered and will send an welcome email to the user
 #### Invites
-- Send dynamic links to people that do not have the app.
+- The user can share the app with an dynamic link. The share message also provides the users current power
 #### Remote Config
-- Free the prisoner (switch background/text to something like "you are free").
-- Kill the prisoner (show gravestone and disable step counter).
+- An development message is displayed in a textview if it has any value (functional)
+- The textcolor on power/steps/pushups/situps can be remotely configurated (theming)
 #### Performance Monotoring
-- Not a real requirements, but check the performance monotoring tab for cool stuff and perhaps optimize the startup of the app.
+- Turned on and displayed in the firebase console.
 
 ### Other
-- Count steps taken when outside the prison and inside.
+- A stepcounter which gives the prisoner power on each step
+- A mediaplayer that plays game background music
+- A settings menu that can
+    - Turn on/off sound 
+    - Change the language on the go
+    - Delete & Logout the user
