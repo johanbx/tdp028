@@ -2,215 +2,179 @@
 <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    style="@style/background"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    style="@style/background"
     android:background="@color/colorPrisonPrimary"
     tools:context=".MainActivity">
 
-    <ImageView
-        android:id="@+id/image_power_background"
-        android:layout_width="0dp"
-        android:layout_height="49dp"
-        android:contentDescription="@string/mockup_shape"
-        android:src="@color/colorCounterPrimary"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <TextView
-        android:id="@+id/powerValueTextView"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:id="@+id/linearLayout"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginTop="8dp"
-        android:text="@string/zero"
-        android:textAlignment="textEnd"
-        android:textAllCaps="false"
-        android:textColor="@color/white"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="@+id/image_power_background"
-        app:layout_constraintEnd_toEndOf="@+id/image_power_background"
-        app:layout_constraintTop_toTopOf="@+id/image_power_background"
-        app:layout_constraintVertical_bias="1.0" />
+        android:orientation="vertical">
 
-    <TextView
-        android:id="@+id/powerTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:text="POWER"
-        android:textColor="@color/white"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="@+id/image_power_background"
-        app:layout_constraintStart_toStartOf="@+id/image_power_background"
-        app:layout_constraintTop_toTopOf="@+id/image_power_background"
-        app:layout_constraintVertical_bias="1.0" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/colorCounterPrimary"
+            android:orientation="horizontal"
+            android:padding="10dp">
 
-    <ImageView
-        android:id="@+id/image_steps_background"
-        android:layout_width="0dp"
-        android:layout_height="33dp"
-        android:contentDescription="@string/mockup_shape"
-        android:src="@color/colorCounterAlternative"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/image_power_background" />
+            <TextView
+                android:id="@+id/powerTextView"
+                android:layout_width="107dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="POWER"
+                android:textColor="@color/white"
+                android:textSize="24sp"
+                android:textStyle="bold" />
 
-    <TextView
-        android:id="@+id/stepsValueTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginTop="8dp"
-        android:text="@string/zero"
-        android:textAlignment="textEnd"
-        android:textColor="@color/white"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="@+id/image_steps_background"
-        app:layout_constraintEnd_toEndOf="@+id/image_steps_background"
-        app:layout_constraintTop_toTopOf="@+id/image_steps_background" />
+            <TextView
+                android:id="@+id/powerValueTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/zero"
+                android:textAlignment="textEnd"
+                android:textAllCaps="false"
+                android:textColor="@color/white"
+                android:textSize="24sp"
+                android:textStyle="bold" />
 
-    <TextView
-        android:id="@+id/stepsTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:text="STEPS"
-        android:textColor="@color/white"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="@+id/image_steps_background"
-        app:layout_constraintStart_toStartOf="@+id/image_steps_background"
-        app:layout_constraintTop_toTopOf="@+id/image_steps_background" />
+        </LinearLayout>
 
-    <ImageView
-        android:id="@+id/image_sit_ups_background"
-        android:layout_width="0dp"
-        android:layout_height="33dp"
-        android:contentDescription="@string/mockup_shape"
-        android:src="@color/colorCounterSecondary"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/image_steps_background" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/colorCounterSecondary"
+            android:orientation="horizontal"
+            android:padding="10dp">
 
-    <TextView
-        android:id="@+id/sitUpsTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:text="SIT UPS"
-        android:textColor="@color/white"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="@+id/image_sit_ups_background"
-        app:layout_constraintStart_toStartOf="@+id/image_sit_ups_background"
-        app:layout_constraintTop_toTopOf="@+id/image_sit_ups_background" />
+            <TextView
+                android:id="@+id/stepsTextView"
+                android:layout_width="100dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="STEPS"
+                android:textColor="@color/white"
+                android:textSize="18sp"
+                android:textStyle="bold" />
 
-    <TextView
-        android:id="@+id/sitUpsValueTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginTop="8dp"
-        android:text="@string/zero"
-        android:textAlignment="textEnd"
-        android:textColor="@color/white"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="@+id/image_sit_ups_background"
-        app:layout_constraintEnd_toEndOf="@+id/image_sit_ups_background"
-        app:layout_constraintTop_toTopOf="@+id/image_sit_ups_background" />
+            <TextView
+                android:id="@+id/stepsValueTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/zero"
+                android:textAlignment="textEnd"
+                android:textColor="@color/white"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+        </LinearLayout>
 
-    <ImageView
-        android:id="@+id/image_push_ups_background"
-        android:layout_width="0dp"
-        android:layout_height="33dp"
-        android:contentDescription="@string/mockup_shape"
-        android:src="@color/colorCounterPrimary"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/image_sit_ups_background" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/colorCounterPrimary"
+            android:orientation="horizontal"
+            android:padding="10dp">
 
-    <TextView
-        android:id="@+id/pushUpsTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:text="PUSH UPS"
-        android:textColor="@color/white"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="@+id/image_push_ups_background"
-        app:layout_constraintStart_toStartOf="@+id/image_push_ups_background"
-        app:layout_constraintTop_toTopOf="@+id/image_push_ups_background" />
+            <TextView
+                android:id="@+id/pushUpsTextView"
+                android:layout_width="100dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="PUSH UPS"
+                android:textColor="@color/white"
+                android:textSize="18sp"
+                android:textStyle="bold" />
 
-    <TextView
-        android:id="@+id/pushUpsValueTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginTop="8dp"
-        android:text="@string/zero"
-        android:textAlignment="center"
-        android:textColor="@color/white"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="@+id/image_push_ups_background"
-        app:layout_constraintEnd_toEndOf="@+id/image_push_ups_background"
-        app:layout_constraintTop_toTopOf="@+id/image_push_ups_background" />
+            <TextView
+                android:id="@+id/pushUpsValueTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/zero"
+                android:textAlignment="textEnd"
+                android:textColor="@color/white"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+        </LinearLayout>
 
-    <ImageView
-        android:id="@+id/image_prisoner_status"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:contentDescription="@string/prison_bars"
-        android:scaleType="centerCrop"
-        android:src="@drawable/bars"
-        app:layout_constraintBottom_toTopOf="@+id/ButtonGridView"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/usernameTextView" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/colorCounterAlternative"
+            android:orientation="horizontal"
+            android:padding="10dp">
 
-    <TextView
-        android:id="@+id/usernameTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="8dp"
-        android:layout_marginStart="8dp"
-        android:text="@string/anonymous"
-        android:textAlignment="center"
-        android:textColor="@color/white"
-        android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/image_push_ups_background" />
+            <TextView
+                android:id="@+id/sitUpsTextView"
+                android:layout_width="100dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="SIT UPS"
+                android:textColor="@color/white"
+                android:textSize="18sp"
+                android:textStyle="bold" />
 
-    <GridView
-        android:id="@+id/ButtonGridView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginStart="8dp"
-        android:numColumns="auto_fit"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+            <TextView
+                android:id="@+id/sitUpsValueTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/zero"
+                android:textAlignment="textEnd"
+                android:textColor="@color/white"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/image_prisoner_status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:contentDescription="@string/prison_bars"
+            android:scaleType="centerCrop"
+            android:src="@drawable/bars" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:background="@color/colorCounterAlternative">
+
+            <TextView
+                android:id="@+id/usernameTextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/anonymous"
+                android:textAlignment="center"
+                android:textColor="@color/white"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/devMessageTextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textAlignment="center"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+        <GridView
+            android:id="@+id/ButtonGridView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:numColumns="auto_fit"
+            android:visibility="visible"></GridView>
+
+    </LinearLayout>
 
 </android.support.constraint.ConstraintLayout>

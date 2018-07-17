@@ -3,7 +3,7 @@
 <defaultsMap>
     <entry>
         <key>dev_welcome_message</key>
-        <value>Fetching config…</value>
+        <value></value>
     </entry>
     <entry>
         <key>theme_power_text_color</key>

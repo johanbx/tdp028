@@ -46,7 +46,6 @@ class SettingsActivity : Activity() {
         mAuth = FirebaseAuth.getInstance()
 
         analyticEvents = AnalyticEvents(mFirebaseAnalytics)
-
         soundSwitch.isChecked = !MainActivity.mediaPlayerMuted
 
         syncCloudSaveButton.setOnClickListener { syncCloudSave() }

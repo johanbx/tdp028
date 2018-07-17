@@ -24,6 +24,7 @@ import android.support.v4.app.ActivityCompat
 import android.support.v4.app.NotificationManagerCompat
 import android.support.v4.content.ContextCompat
 import android.util.Log
+import android.view.View
 import com.google.android.gms.location.*
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
@@ -61,6 +62,8 @@ class MainActivity : Activity(), SensorEventListener {
         const val INTENT_WON_GAME = "INTENT_WON_GAME"
 
         const val PRISONER_POWER = "PRISONER_POWER"
+
+        const val MUSIC_POSITION = "MUSIC_POSITION"
 
         lateinit var mediaPlayer: MediaPlayer
         var mediaPlayerMuted = false
@@ -112,6 +115,9 @@ class MainActivity : Activity(), SensorEventListener {
     @SuppressLint("MissingPermission")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        Log.d(TAG, "onCreate called")
+
         if (firstTimeRun) { return startWelcomeActivity() }
         setContentView(R.layout.activity_main)
 
@@ -155,9 +161,16 @@ class MainActivity : Activity(), SensorEventListener {
             analyticEvents.wasInvited(mAuth.currentUser!!.uid)
         }
 
-        initMediaPlayer()
+        initMediaPlayer(savedInstanceState?.getInt(MUSIC_POSITION, 0)?: 0)
 
         applyTheme()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle?) {
+        outState?.run {
+            putInt(MUSIC_POSITION, mediaPlayer.currentPosition)
+        }
+        super.onSaveInstanceState(outState)
     }
 
     override fun onConfigurationChanged(newConfig: Configuration?) {
@@ -228,15 +241,14 @@ class MainActivity : Activity(), SensorEventListener {
     // https://medium.com/@ssaurel/create-a-step-counter-fitness-app-for-android-with-kotlin-bbfb6ffe3ea7
     override fun onResume() {
         super.onResume()
-        try {
+        Log.d(TAG, "onResume called")
+
+        /* Media player */
+        if (!mediaPlayer.isPlaying) {
             mediaPlayer.start()
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to start mediaplayer")
-            Log.e(TAG, "restarting mediaplayer...")
-            initMediaPlayer()
         }
 
-
+        /* Steps */
         running = true
         val stepsSensor = sensorManager?.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR)
 
@@ -246,8 +258,7 @@ class MainActivity : Activity(), SensorEventListener {
             sensorManager?.registerListener(this, stepsSensor, SensorManager.SENSOR_DELAY_UI)
         }
 
-        Log.d(TAG, "onResume called")
-
+        /* Intents */
         if (intent.getStringExtra(INTENT_LOGIN) == INTENT_LOGIN) {
             intent.removeExtra(INTENT_LOGIN)
             loginUser(SIGN_IN_AND_ASK)
@@ -269,17 +280,8 @@ class MainActivity : Activity(), SensorEventListener {
 
     override fun onStop() {
         super.onStop()
-
-        try {
-            mediaPlayer.pause()
-        } catch (e: Exception) {
-            Log.e(TAG, "failed to pause mediaplayer")
-            try {
-                mediaPlayer.release()
-            } catch (e: Exception) {
-                Log.e(TAG, "failed to pause and release mediaplayer")
-            }
-        }
+        mediaPlayer.pause()
+        Log.d(TAG, "onStop called")
     }
 
     override fun onDestroy() {
@@ -299,12 +301,12 @@ class MainActivity : Activity(), SensorEventListener {
     }
 
     /* Init:s */
-    private fun initMediaPlayer() {
+    private fun initMediaPlayer(musicPosition: Int = 0) {
         mediaPlayer = MediaPlayer.create(applicationContext, R.raw.background_music)
+        mediaPlayer.seekTo(musicPosition)
         mediaPlayer.isLooping = true
         mediaPlayer.start()
     }
-
 
     private fun initOnDatabaseChanges() {
         updateUI()
@@ -391,8 +393,10 @@ class MainActivity : Activity(), SensorEventListener {
         remoteConfig.fetch(0).addOnCompleteListener {
             if (it.isSuccessful) {
                 remoteConfig.activateFetched()
-                Toast.makeText(this, remoteConfig.getString("dev_welcome_message"),
-                        Toast.LENGTH_LONG).show()
+                if (!remoteConfig.getString("dev_welcome_message").isNullOrEmpty()) {
+                    devMessageTextView.visibility = View.VISIBLE
+                    devMessageTextView.text = remoteConfig.getString("dev_welcome_message")
+                }
             } else {
                 Toast.makeText(this, "failed to fetch remote config", Toast.LENGTH_LONG).show()
             }
