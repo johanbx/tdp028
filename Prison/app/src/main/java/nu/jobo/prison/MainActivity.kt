@@ -1,9 +1,12 @@
 package nu.jobo.prison
 
+import nu.jobo.prison.adapters.ButtonAdapter
+import nu.jobo.prison.events.AnalyticEvents
+import nu.jobo.prison.events.PrisonerEvents
+import nu.jobo.prison.utility.LocaleManager
 import android.annotation.SuppressLint
 import android.app.*
 import android.content.Context
-import android.content.DialogInterface
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -36,6 +39,8 @@ import com.google.firebase.dynamiclinks.FirebaseDynamicLinks
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings
 import kotlinx.android.synthetic.main.activity_main.*
+import nu.jobo.prison.datacontainers.PrisonerData
+import nu.jobo.prison.services.GeofenceTransitionsIntentService
 
 
 class MainActivity : Activity(), SensorEventListener {
@@ -47,7 +52,6 @@ class MainActivity : Activity(), SensorEventListener {
         const val SIGN_IN_AND_ASK = 120
         const val SIGN_IN_AND_EXIT = 121
         const val CHANNEL_ID = "CHANNEL_ID"
-        const val FRIEND_INVITE_POWER_BONUS = "FRIEND_INVITE_POWER_BONUS"
         const val FIRST_TIME_RUN = "FIRST_TIME_RUN"
 
         const val FENCE_KEY = "FENCE_KEY"
@@ -154,24 +158,6 @@ class MainActivity : Activity(), SensorEventListener {
         setTitle(R.string.prisoner_status_captured)
         initMediaPlayer(savedInstanceState?.getInt(MUSIC_POSITION, 0)?: 0)
     }
-
-    /*
-    fun checkFriendInvite() {
-        if (prisoner.power == 0 &&
-                intent.getIntExtra(FRIEND_INVITE_POWER_BONUS, 0) != 0) {
-            prisoner.power = intent.getIntExtra(FRIEND_INVITE_POWER_BONUS, 2000)
-            if (mAuth.currentUser?.isAnonymous?:true) {
-                Toast.makeText(applicationContext,
-                        getString(R.string.given_free_power), Toast.LENGTH_LONG).show()
-                analyticEvents.wasInvited(mAuth.currentUser!!.uid)
-            } else {
-                Toast.makeText(applicationContext,
-                        getString(R.string.already_given_power), Toast.LENGTH_LONG).show()
-            }
-
-        }
-    }
-    */
 
     override fun onSaveInstanceState(outState: Bundle?) {
         outState?.run {
@@ -463,7 +449,11 @@ class MainActivity : Activity(), SensorEventListener {
             prefs.edit().putBoolean(FIRST_TIME_RUN, false).commit()
             var inviteMsg = ""
             when (wasInvited) {
-                true -> inviteMsg = getString(R.string.friend_invite_extra_power)
+                true -> {
+                    inviteMsg = getString(R.string.friend_invite_extra_power)
+                    prisoner.power = startingPower
+                    updateUI()
+                }
                 false -> inviteMsg = ""
             }
             val alertDialogBuilder = AlertDialog.Builder(this)

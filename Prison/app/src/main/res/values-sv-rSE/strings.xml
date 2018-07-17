@@ -6,7 +6,7 @@
     <string name="already_logged_in_message">Du är redan inloggad</string>
     <string name="button_try_escape">Försök Rymma</string>
     <string name="cant_logout_anonymous_user_warning">Kan inte logga ut anonym användare</string>
-    <string name="fence_notification_inside_message">Vakterna är nöjda</string>
+    <string name="fence_notification_inside_message">Vakterna är på sin vakt</string>
     <string name="fence_notification_inside_title">Innanför fängelseområdet</string>
     <string name="fence_notification_outside_message">Vakterna kommer!! Spring!</string>
     <string name="fence_notification_outside_title">Utanför fängelseområdet</string>
@@ -42,4 +42,6 @@
     <string name="share_game">Dela Spel</string>
     <string name="settings">Inställningar</string>
     <string name="steps">STEG</string>
+    <string name="won_the_game_not_title">Du vann spelet.</string>
+    <string name="click_for_highscore">Klicka här för highscore</string>
 </resources>

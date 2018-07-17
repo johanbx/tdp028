@@ -1,5 +1,7 @@
 package nu.jobo.prison
 
+import nu.jobo.prison.events.AnalyticEvents
+import nu.jobo.prison.utility.LocaleManager
 import android.app.Activity
 import android.content.Context
 import android.content.Intent

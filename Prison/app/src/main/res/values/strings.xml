@@ -70,4 +70,6 @@
     <string name="failed_to_delete_user">Failed to delete user</string>
     <string name="already_given_power">You have already been given power</string>
     <string name="start_the_game">Start the game!</string>
+    <string name="won_the_game_not_title">You won the game.</string>
+    <string name="click_for_highscore">Click for highscore</string>
 </resources>
