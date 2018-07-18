@@ -475,6 +475,7 @@ class MainActivity : Activity(), SensorEventListener {
                 true -> {
                     inviteMsg = getString(R.string.friend_invite_extra_power)
                     prisoner.power = startingPower
+                    analyticEvents.wasInvited(mAuth.currentUser?.uid!!)
                     updateUI()
                 }
                 false -> inviteMsg = ""
