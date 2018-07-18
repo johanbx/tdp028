@@ -1,8 +1,7 @@
 package nu.jobo.prison.events
 
 import android.widget.Toast
-import kotlinx.android.synthetic.main.activity_main.*
-import nu.jobo.prison.MainActivity
+import nu.jobo.prison.activities.MainActivity
 import nu.jobo.prison.datacontainers.PrisonerData
 import nu.jobo.prison.R
 import java.util.*

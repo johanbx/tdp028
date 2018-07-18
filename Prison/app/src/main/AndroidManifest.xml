@@ -18,7 +18,7 @@
             android:name="com.facebook.sdk.ApplicationId"
             android:value="@string/facebook_application_id" />
 
-        <activity android:name=".MainActivity"
+        <activity android:name=".activities.MainActivity"
             android:icon="@drawable/bars">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -34,7 +34,7 @@
                     android:scheme="https" />
             </intent-filter>
         </activity>
-        <activity android:name=".SettingsActivity"></activity>
+        <activity android:name=".activities.SettingsActivity"></activity>
     </application>
 
 </manifest>

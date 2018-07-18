@@ -1,4 +1,4 @@
-package nu.jobo.prison
+package nu.jobo.prison.activities
 
 import nu.jobo.prison.events.AnalyticEvents
 import nu.jobo.prison.events.PrisonerEvents
@@ -40,6 +40,8 @@ import com.google.firebase.dynamiclinks.FirebaseDynamicLinks
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings
 import kotlinx.android.synthetic.main.activity_main.*
+import nu.jobo.prison.BuildConfig
+import nu.jobo.prison.R
 import nu.jobo.prison.datacontainers.PrisonerData
 import nu.jobo.prison.services.GeofenceTransitionsIntentService
 
@@ -156,7 +158,7 @@ class MainActivity : Activity(), SensorEventListener {
 
         FirebaseDynamicLinks.getInstance().getDynamicLink(intent)
                 .addOnFailureListener{
-                    Log.e(MainActivity.TAG, it.toString())}
+                    Log.e(TAG, it.toString())}
                 .addOnSuccessListener {
                     if (it != null) {
                         startingPower = 2000 }}

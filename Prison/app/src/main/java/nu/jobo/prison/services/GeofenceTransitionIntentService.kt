@@ -15,7 +15,7 @@ import android.content.Context
 import android.content.res.Configuration
 import android.support.v4.app.NotificationCompat
 import android.support.v4.app.TaskStackBuilder
-import nu.jobo.prison.MainActivity
+import nu.jobo.prison.activities.MainActivity
 import nu.jobo.prison.R
 
 

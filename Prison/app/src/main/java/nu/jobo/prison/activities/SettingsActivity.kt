@@ -1,4 +1,4 @@
-package nu.jobo.prison
+package nu.jobo.prison.activities
 
 import nu.jobo.prison.events.AnalyticEvents
 import nu.jobo.prison.utility.LocaleManager
@@ -16,6 +16,7 @@ import android.widget.Toast
 import com.firebase.ui.auth.AuthUI
 import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
 import com.google.firebase.database.FirebaseDatabase
+import nu.jobo.prison.R
 
 
 class SettingsActivity : Activity() {
