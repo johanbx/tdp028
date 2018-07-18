@@ -8,6 +8,15 @@
     android:background="@color/colorPrisonPrimary"
     tools:context=".MainActivity">
 
+    <Toolbar
+        android:id="@+id/actionBar"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:background="@color/colorCounterAlternative"
+        android:elevation="4dp"
+        android:theme="@style/Base.ThemeOverlay.AppCompat.ActionBar">
+    </Toolbar>
+
     <LinearLayout
         android:id="@+id/linearLayout"
         android:layout_width="match_parent"

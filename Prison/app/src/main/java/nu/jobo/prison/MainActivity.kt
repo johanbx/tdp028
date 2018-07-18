@@ -28,6 +28,9 @@ import android.support.v4.app.ActivityCompat
 import android.support.v4.app.NotificationManagerCompat
 import android.support.v4.content.ContextCompat
 import android.util.Log
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
 import android.view.View
 import com.google.android.gms.location.*
 import com.google.firebase.analytics.FirebaseAnalytics
@@ -114,6 +117,7 @@ class MainActivity : Activity(), SensorEventListener {
         super.onCreate(savedInstanceState)
         Log.d(TAG, "onCreate called")
         setContentView(R.layout.activity_main)
+        setActionBar(findViewById(R.id.actionBar))
 
         initRemoteConfig()
         applyTheme()
@@ -157,6 +161,25 @@ class MainActivity : Activity(), SensorEventListener {
 
         setTitle(R.string.prisoner_status_captured)
         initMediaPlayer(savedInstanceState?.getInt(MUSIC_POSITION, 0)?: 0)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+        when (item?.itemId) {
+            R.id.action_settings -> {
+                val settingIntent = Intent(this, SettingsActivity::class.java).run {
+                    putExtra(PRISONER_POWER, prisoner.power)
+                }
+                settingIntent.flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                startActivityIfNeeded(settingIntent, 0)
+            }
+        }
+        return true
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.actionbar, menu)
+        return true
+        //return super.onCreateOptionsMenu(menu)
     }
 
     override fun onSaveInstanceState(outState: Bundle?) {
@@ -553,20 +576,10 @@ class MainActivity : Activity(), SensorEventListener {
         val tryEscapeButton: Button = simpleEventButton(
                 R.string.button_try_escape, {prisonerEvents.tryEscape()})
 
-        val settingsButton: Button = simpleEventButton(
-                getString(R.string.settings), {
-            val settingIntent = Intent(this, SettingsActivity::class.java).run {
-                putExtra(PRISONER_POWER, prisoner.power)
-            }
-            settingIntent.flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
-            startActivityIfNeeded(settingIntent, 0)
-        })
-
         return arrayOf<Button>(
                 pushUpButton,
                 sitUpButton,
-                tryEscapeButton,
-                settingsButton)
+                tryEscapeButton)
     }
 
     // Geofence-related
