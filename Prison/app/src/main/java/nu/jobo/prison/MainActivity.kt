@@ -51,7 +51,6 @@ class MainActivity : Activity(), SensorEventListener {
     companion object {
         const val TAG = "MY_MAINACTIVITY"
 
-        const val POWER_FOR_ESCAPE = 10000
         const val SIGN_IN_AND_ASK = 120
         const val SIGN_IN_AND_EXIT = 121
         const val CHANNEL_ID = "CHANNEL_ID"
@@ -142,8 +141,10 @@ class MainActivity : Activity(), SensorEventListener {
 
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
 
-        val buttons = initButtons()
-        ButtonGridView.adapter = ButtonAdapter(this, buttons)
+        pushUpButton.setOnClickListener { prisonerEvents.pushUp() }
+        sitUpButton.setOnClickListener { prisonerEvents.sitUp() }
+        escapeButton.setOnClickListener { prisonerEvents.tryEscape() }
+
         statusImage = findViewById(R.id.image_prisoner_status)
         pushUpCounter = findViewById(R.id.pushUpsValueTextView)
         sitUpCounter = findViewById(R.id.sitUpsValueTextView)
@@ -358,10 +359,9 @@ class MainActivity : Activity(), SensorEventListener {
         escapingAttemptNotificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.mipmap.ic_launcher_round)
                 .setContentTitle(getString(R.string.successful_escape))
-                .setContentText(getString(R.string.on_escape_instructions))
+                .setStyle(NotificationCompat.BigTextStyle().bigText(getString(R.string.on_escape_instructions)))
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setContentIntent(pendingIntent)
-                .setAutoCancel(true)
     }
 
     @SuppressLint("MissingPermission")
@@ -538,6 +538,7 @@ class MainActivity : Activity(), SensorEventListener {
         } else {
             usernameTextView.text = mAuth.currentUser?.displayName
         }
+        escapeProgressBar.progress = prisoner.power
         pushUpCounter.text = prisoner.pushUps.toString()
         sitUpCounter.text = prisoner.sitUps.toString()
         powerCounter.text =  prisoner.power.toString()
@@ -563,23 +564,6 @@ class MainActivity : Activity(), SensorEventListener {
             function()
         }
         return button
-    }
-
-    private fun initButtons(): Array<Button> {
-
-        val pushUpButton: Button = simpleEventButton(
-                R.string.button_push_up, {prisonerEvents.pushUp()})
-
-        val sitUpButton: Button = simpleEventButton(
-                R.string.button_sit_up, {prisonerEvents.sitUp()})
-
-        val tryEscapeButton: Button = simpleEventButton(
-                R.string.button_try_escape, {prisonerEvents.tryEscape()})
-
-        return arrayOf<Button>(
-                pushUpButton,
-                sitUpButton,
-                tryEscapeButton)
     }
 
     // Geofence-related

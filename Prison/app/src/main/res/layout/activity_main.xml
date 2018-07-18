@@ -8,20 +8,20 @@
     android:background="@color/colorPrisonPrimary"
     tools:context=".MainActivity">
 
-    <Toolbar
-        android:id="@+id/actionBar"
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:background="@color/colorCounterAlternative"
-        android:elevation="4dp"
-        android:theme="@style/Base.ThemeOverlay.AppCompat.ActionBar">
-    </Toolbar>
-
     <LinearLayout
         android:id="@+id/linearLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical">
+
+        <Toolbar
+            android:titleTextColor="@color/white"
+            android:id="@+id/actionBar"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:background="@color/colorCounterAlternative"
+            android:elevation="4dp"
+            android:theme="@style/Base.ThemeOverlay.AppCompat.ActionBar"></Toolbar>
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -146,7 +146,7 @@
             android:id="@+id/image_prisoner_status"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:layout_weight="99999"
             android:contentDescription="@string/prison_bars"
             android:scaleType="centerCrop"
             android:src="@drawable/bars" />
@@ -154,8 +154,8 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:orientation="vertical"
-            android:background="@color/colorCounterAlternative">
+            android:background="@color/colorCounterAlternative"
+            android:orientation="vertical">
 
             <TextView
                 android:id="@+id/usernameTextView"
@@ -177,12 +177,51 @@
 
         </LinearLayout>
 
-        <GridView
-            android:id="@+id/ButtonGridView"
+        <ProgressBar
+            android:id="@+id/escapeProgressBar"
+            style="@android:style/Widget.DeviceDefault.Light.ProgressBar.Horizontal"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:numColumns="auto_fit"
-            android:visibility="visible"></GridView>
+            android:max="@integer/power_to_escape"
+            android:progress="1"
+            android:progressTint="@color/colorAccent" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="horizontal">
+
+            <Button
+                android:layout_weight="1"
+                android:id="@+id/pushUpButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/button_push_up" />
+
+            <Button
+                android:layout_weight="1"
+                android:id="@+id/sitUpButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/button_sit_up" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            tools:layout_editor_absoluteX="59dp"
+            tools:layout_editor_absoluteY="280dp">
+
+            <Button
+                android:id="@+id/escapeButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/button_try_escape" />
+        </LinearLayout>
 
     </LinearLayout>
 

@@ -4,16 +4,10 @@
         <item name="android:background">@color/colorPrisonPrimary</item>
     </style>
 
-    <style name="defaultButton" parent="android:Widget.Material.Light.Button">
-        <item name="android:background">@drawable/button_border</item>
-    </style>
-
     <style name="AppTheme" parent="android:Theme.Material.NoActionBar">
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
-        <item name="android:buttonStyle">@style/defaultButton</item>
-        <item name="buttonStyle">@style/defaultButton</item>
     </style>
 
 </resources>

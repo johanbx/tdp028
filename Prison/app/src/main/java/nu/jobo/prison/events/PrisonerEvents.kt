@@ -1,5 +1,7 @@
 package nu.jobo.prison.events
 
+import android.widget.Toast
+import kotlinx.android.synthetic.main.activity_main.*
 import nu.jobo.prison.MainActivity
 import nu.jobo.prison.datacontainers.PrisonerData
 import nu.jobo.prison.R
@@ -19,11 +21,16 @@ class PrisonerEvents(private val mainActivity: MainActivity) {
     }
 
     private fun prisonerEscaped() {
-        mainActivity.statusImage.setImageResource(R.drawable.escaped)
-        mainActivity.setTitle(R.string.prisoner_status_escaping)
-        mainActivity.escapeNotification()
-        MainActivity.escaped = true
-        mainActivity.initGeofence()
+        if (!MainActivity.escaped) {
+            mainActivity.statusImage.setImageResource(R.drawable.escaped)
+            mainActivity.setTitle(R.string.prisoner_status_escaping)
+            mainActivity.escapeNotification()
+            MainActivity.escaped = true
+            mainActivity.initGeofence()
+        } else {
+            Toast.makeText(mainActivity.applicationContext,
+                    "You have already escaped your cage", Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun powerRandomRangeIncrease(from: Int, to: Int) {
@@ -62,7 +69,7 @@ class PrisonerEvents(private val mainActivity: MainActivity) {
 
     fun tryEscape() {
         val currentPower = mainActivity.powerCounter.text.toString().toInt()
-        val powerToEscape = MainActivity.POWER_FOR_ESCAPE
+        val powerToEscape = mainActivity.resources.getInteger(R.integer.power_to_escape)
 
         if (currentPower >= powerToEscape ||
                 currentPower > (0..powerToEscape).random()) {
