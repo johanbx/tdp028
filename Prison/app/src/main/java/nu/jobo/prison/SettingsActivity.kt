@@ -29,11 +29,13 @@ class SettingsActivity : Activity() {
     private lateinit var mAuth: FirebaseAuth
     private lateinit var analyticEvents: AnalyticEvents
 
+    // Applies language settings without a restart
     override fun onConfigurationChanged(newConfig: Configuration?) {
         super.onConfigurationChanged(newConfig)
         LocaleManager.setLocale(this)
     }
 
+    // Gives localmanager this context (used in languages)
     override fun attachBaseContext(newBase: Context?) {
         super.attachBaseContext(LocaleManager.setLocale(newBase!!))
     }
@@ -42,19 +44,22 @@ class SettingsActivity : Activity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)
 
-        val prefs = PreferenceManager.getDefaultSharedPreferences(applicationContext)
-
+        // Firebase
         mFirebaseAnalytics = FirebaseAnalytics.getInstance(this)
         mAuth = FirebaseAuth.getInstance()
-
         analyticEvents = AnalyticEvents(mFirebaseAnalytics)
+
+        // Sound option
+        val prefs = PreferenceManager.getDefaultSharedPreferences(applicationContext)
         soundSwitch.isChecked = !prefs.getBoolean(MainActivity.VOLUME_MUTED, false)
 
+        // Bind functions to buttons
         syncCloudSaveButton.setOnClickListener { syncCloudSave() }
         deleteAccountButton.setOnClickListener { deleteUser() }
         logoutButton.setOnClickListener { logoutUser() }
         shareGameButton.setOnClickListener { shareGame() }
 
+        // On switch change, set volue on/off accordingly
         soundSwitch.setOnCheckedChangeListener { _, b ->
             val prefs = PreferenceManager.getDefaultSharedPreferences(applicationContext)
             prefs.edit().putBoolean(MainActivity.VOLUME_MUTED, !b).commit()
@@ -79,6 +84,7 @@ class SettingsActivity : Activity() {
         }
     }
 
+    // Opens text intent that writes a message with current prisoner power and dynamic link
     private fun shareGame() {
         val power = intent.getIntExtra(MainActivity.PRISONER_POWER, 0)
         analyticEvents.shareApp(mAuth.currentUser!!.uid, power)
@@ -93,6 +99,7 @@ class SettingsActivity : Activity() {
         startActivity(shareIntent)
     }
 
+    // Send login intent to mainactivity
     private fun syncCloudSave(force: Boolean = false) {
         val loginOnMainActivity = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
@@ -105,6 +112,7 @@ class SettingsActivity : Activity() {
         finish()
     }
 
+    // OBS: This is not a restart. Used when language is changed.
     private fun refreshActivity(languageChanged: Boolean = false) {
         val refreshIntent = Intent(intent).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or
@@ -124,6 +132,7 @@ class SettingsActivity : Activity() {
         startActivity(restartActivity)
     }
 
+    // Logout current user
     private fun logoutUser() {
         when (mAuth.currentUser){
             null -> {
@@ -144,6 +153,7 @@ class SettingsActivity : Activity() {
         }
     }
 
+    // Delete current user
     private fun deleteUser() {
         try {
             // Database
@@ -174,6 +184,7 @@ class SettingsActivity : Activity() {
         }
     }
 
+    // When backbutton is pressed go directly to mainactivity (if e.g. a refresh activity was issued)
     override fun onBackPressed() {
         if (intent.getBooleanExtra(LANGUAGE_CHANGED, false)) {
             intent.removeExtra(LANGUAGE_CHANGED)

@@ -6,10 +6,13 @@ import android.os.Build
 import android.preference.PreferenceManager
 import java.util.*
 
+// Used to change language without restarting the app.
+// Have support for new an old ways to change languages.
 
 // Source: https://proandroiddev.com/change-language-programmatically-at-runtime-on-android-5e6bc15c758
 // https://github.com/YarikSOffice/LanguageTest/blob/master/app/src/main/java/com/yariksoffice/languagetest/LocaleManager.java
-public class LocaleManager {
+// Todo: Create a new activity and inherit attachBaseContext & onConfigurationChanged
+class LocaleManager {
     companion object {
 
         const val LANGUAGE_ENGLISH = "en"

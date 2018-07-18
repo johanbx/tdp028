@@ -1,6 +1,5 @@
 package nu.jobo.prison
 
-import nu.jobo.prison.adapters.ButtonAdapter
 import nu.jobo.prison.events.AnalyticEvents
 import nu.jobo.prison.events.PrisonerEvents
 import nu.jobo.prison.utility.LocaleManager
@@ -29,7 +28,6 @@ import android.support.v4.app.NotificationManagerCompat
 import android.support.v4.content.ContextCompat
 import android.util.Log
 import android.view.Menu
-import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import com.google.android.gms.location.*
@@ -63,46 +61,51 @@ class MainActivity : Activity(), SensorEventListener {
         const val LOCATION_PERMISSION_REQUEST_CODE = 345
 
         const val INTENT_LOGIN = "INTENT_LOGIN"
-        const val INTENT_WON_GAME = "INTENT_WON_GAME"
         const val INTENT_LOGIN_FORCE = "INTENT_LOGIN_FORCE"
+        const val INTENT_WON_GAME = "INTENT_WON_GAME"
 
         const val PRISONER_POWER = "PRISONER_POWER"
 
         const val MUSIC_POSITION = "MUSIC_POSITION"
         const val VOLUME_MUTED = "VOLUME_MUTED"
 
-        lateinit var mediaPlayer: MediaPlayer
-
-        var escaped = false
+        // Todo: Perhaps move these somewhere else
+        lateinit var mediaPlayer: MediaPlayer // Used in SettingsActivity
+        var escaped = false // Used in PrisonerEvents & GeofenceService
     }
 
+    // Misc
+    private var firstTimeRun = false
+
+    // Steps
+    private var running = false
+    private var sensorManager:SensorManager? = null
+
+    // Game Elements
     var prisoner = PrisonerData()
     var startingPower = 0
+    private lateinit var escapingAttemptNotificationBuilder: NotificationCompat.Builder
+    private lateinit var prisonerEvents: PrisonerEvents
 
+    // Geofence & Location
+    private lateinit var fence: Geofence
+    private lateinit var geofencingClient: GeofencingClient
+    private var fenceLatitude: Double = 0.0
+    private var fenceLongitude: Double = 0.0
+
+    // Firebase
     // Authentication Providers (login ui)
     private var providers = Arrays.asList(
             AuthUI.IdpConfig.EmailBuilder().build(),
             AuthUI.IdpConfig.GoogleBuilder().build(),
             AuthUI.IdpConfig.FacebookBuilder().build())
-
-    private var running = false
-    private var sensorManager:SensorManager? = null
-    private var firstTimeRun = false
-
-    private lateinit var escapingAttemptNotificationBuilder: NotificationCompat.Builder
-    private lateinit var prisonerEvents: PrisonerEvents
-    private lateinit var fence: Geofence
-    private lateinit var remoteConfig: FirebaseRemoteConfig
-
-    private lateinit var geofencingClient: GeofencingClient
-    private var fenceLatitude: Double = 0.0
-    private var fenceLongitude: Double = 0.0
-
     private lateinit var mAuth: FirebaseAuth
     private lateinit var mFirebaseAnalytics: FirebaseAnalytics
     private lateinit var mFusedLocationClient: FusedLocationProviderClient
     private lateinit var analyticEvents: AnalyticEvents
+    private lateinit var remoteConfig: FirebaseRemoteConfig
 
+    // UI
     lateinit var stepCounter: TextView
     lateinit var statusImage: ImageView
     lateinit var pushUpCounter: TextView
@@ -164,6 +167,7 @@ class MainActivity : Activity(), SensorEventListener {
         initMediaPlayer(savedInstanceState?.getInt(MUSIC_POSITION, 0)?: 0)
     }
 
+    // Used in Toolbar Menu
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
         when (item?.itemId) {
             R.id.action_settings -> {
@@ -177,12 +181,13 @@ class MainActivity : Activity(), SensorEventListener {
         return true
     }
 
+    // Initializes Toolbar Menu
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.actionbar, menu)
         return true
-        //return super.onCreateOptionsMenu(menu)
     }
 
+    // Saves music position
     override fun onSaveInstanceState(outState: Bundle?) {
         outState?.run {
             putInt(MUSIC_POSITION, mediaPlayer.currentPosition)
@@ -190,15 +195,18 @@ class MainActivity : Activity(), SensorEventListener {
         super.onSaveInstanceState(outState)
     }
 
+    // Applies language settings without a restart
     override fun onConfigurationChanged(newConfig: Configuration?) {
         super.onConfigurationChanged(newConfig)
         LocaleManager.setLocale(this)
     }
 
+    // Gives localmanager this context (used in languages)
     override fun attachBaseContext(newBase: Context?) {
         super.attachBaseContext(LocaleManager.setLocale(newBase!!))
     }
 
+    // Handles Intent, signs in user
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         Log.d(TAG, "OnActivityResult called")
@@ -221,6 +229,7 @@ class MainActivity : Activity(), SensorEventListener {
         }
     }
 
+    // Handles Location Permissions
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>?,
                                             grantResults: IntArray?) {
         if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
@@ -248,14 +257,14 @@ class MainActivity : Activity(), SensorEventListener {
         }
     }
 
+    // With this we can use Intent parameters in "onresume" (bypasses oncreate)
     override fun onNewIntent(intent: Intent?) {
         if (intent != null) {
             setIntent(intent)
         }
     }
 
-    // Source for step counter:
-    // https://medium.com/@ssaurel/create-a-step-counter-fitness-app-for-android-with-kotlin-bbfb6ffe3ea7
+    // Starts mediaplayer. Check/register step sensor. Handles sign in intents and won intent.
     override fun onResume() {
         super.onResume()
         Log.d(TAG, "onResume called")
@@ -266,6 +275,8 @@ class MainActivity : Activity(), SensorEventListener {
         }
 
         // Steps
+        // Source for step counter:
+        // https://medium.com/@ssaurel/create-a-step-counter-fitness-app-for-android-with-kotlin-bbfb6ffe3ea7
         running = true
         val stepsSensor = sensorManager?.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR)
 
@@ -292,18 +303,21 @@ class MainActivity : Activity(), SensorEventListener {
         }
     }
 
+    // Pauses sensormanager
     override fun onPause() {
         super.onPause()
         running = false
         sensorManager?.unregisterListener(this)
     }
 
+    // Pauses mediaplayer
     override fun onStop() {
         super.onStop()
         Log.d(TAG, "onStop called")
         mediaPlayer.pause()
     }
 
+    // Destroys mediaplayer (otherwise it will keep playing in background)
     override fun onDestroy() {
         super.onDestroy()
         try {
@@ -314,8 +328,10 @@ class MainActivity : Activity(), SensorEventListener {
         }
     }
 
+    // Required for steps
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
 
+    // On each step call a step prisonerevent
     override fun onSensorChanged(event: SensorEvent?) {
         if (running && event != null) {
             prisonerEvents.step()
@@ -334,6 +350,7 @@ class MainActivity : Activity(), SensorEventListener {
         mediaPlayer.start()
     }
 
+    // Listens to database changes and updates prisoner and ui accordingly
     private fun initOnDatabaseChanges() {
         updateUI()
         val ref = FirebaseDatabase.getInstance().getReference("users/" + mAuth.currentUser!!.uid)
@@ -348,6 +365,7 @@ class MainActivity : Activity(), SensorEventListener {
         })
     }
 
+    // initializes escape notification
     private fun initNotification(){
         val intent = Intent(this, MainActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
@@ -364,6 +382,7 @@ class MainActivity : Activity(), SensorEventListener {
                 .setContentIntent(pendingIntent)
     }
 
+    // Creates geofence on current position
     @SuppressLint("MissingPermission")
     fun initGeofence() {
         fence = Geofence.Builder()
@@ -386,6 +405,7 @@ class MainActivity : Activity(), SensorEventListener {
         }
     }
 
+    // Fetches remote config and applies it on success
     private fun initRemoteConfig() {
         remoteConfig = FirebaseRemoteConfig.getInstance()
         remoteConfig.setConfigSettings(
@@ -406,8 +426,8 @@ class MainActivity : Activity(), SensorEventListener {
         }
     }
 
-    // Authentication Related (Mostly moved to SettingsActivity
-
+    // Alertdialog which asks if prisoner should use old
+    // prisonerdata or new prisonerdata
     private fun saveCurrentValuesDialog(saveCurrentValues: (Boolean) -> Unit) {
         val builder = AlertDialog.Builder(this)
         builder
@@ -419,6 +439,7 @@ class MainActivity : Activity(), SensorEventListener {
                 .show()
     }
 
+    // Login a user on start. Either anonymous or with FA
     private fun loginUserOnStart() {
         if (mAuth.currentUser == null){
             createAndLoginAnonymousUser()
@@ -429,9 +450,10 @@ class MainActivity : Activity(), SensorEventListener {
 
     // OBS: onActivityResult for actual logic
     // TODO: See Project in Github
+    // Login FA user with firebase ui activity
     private fun loginUser(signInIntentCode: Int, force: Boolean = false) {
         if (mAuth.currentUser!!.isAnonymous || force) {
-            var intent = AuthUI.getInstance()
+            val intent = AuthUI.getInstance()
                     .createSignInIntentBuilder()
                     .setAvailableProviders(providers)
                     .build()
@@ -443,7 +465,7 @@ class MainActivity : Activity(), SensorEventListener {
         }
     }
 
-
+    // Sign in anonymously (creates anonymous user)
     private fun createAndLoginAnonymousUser() {
         mAuth.signInAnonymously()
                 .addOnCompleteListener {
@@ -465,18 +487,21 @@ class MainActivity : Activity(), SensorEventListener {
         startActivity(restartActivity)
     }
 
+    // Welcome dialog that explains game purpose and if player got power bonus from friend invite
     private fun startWelcomeDialog(wasInvited: Boolean = false) {
         val prefs = PreferenceManager.getDefaultSharedPreferences(applicationContext)
         firstTimeRun = prefs.getBoolean(FIRST_TIME_RUN, true)
         if (firstTimeRun) {
-            prefs.edit().putBoolean(FIRST_TIME_RUN, false).commit()
+            prefs.edit().putBoolean(FIRST_TIME_RUN, false).apply()
             var inviteMsg = ""
             when (wasInvited) {
                 true -> {
                     inviteMsg = getString(R.string.friend_invite_extra_power)
                     prisoner.power = startingPower
                     analyticEvents.wasInvited(mAuth.currentUser?.uid!!)
-                    updateUI()
+                    dbUpdate {
+                        updateUI()
+                    }
                 }
                 false -> inviteMsg = ""
             }
@@ -492,6 +517,7 @@ class MainActivity : Activity(), SensorEventListener {
         }
     }
 
+    // Updates the cloud database with current prisoner values
     fun dbUpdate(function: () -> Unit) {
         if (mAuth.currentUser != null) {
             val ref = FirebaseDatabase
@@ -502,6 +528,7 @@ class MainActivity : Activity(), SensorEventListener {
         }
     }
 
+    // Help function for permission requirements
     // OBS: onRequestPermissionsResult is required.
     private fun requirePermission(permission: String, requestCode: Int) {
         if (ContextCompat.checkSelfPermission(
@@ -514,6 +541,7 @@ class MainActivity : Activity(), SensorEventListener {
         }
     }
 
+    // Create notification channel (required for Android O)
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val name = getString(R.string.channel_name)
@@ -526,13 +554,14 @@ class MainActivity : Activity(), SensorEventListener {
         }
     }
 
-    // Temporary
+    // Fires of escape notification
     fun escapeNotification() {
         val notificationManager = NotificationManagerCompat.from(this)
         notificationManager.notify(123, escapingAttemptNotificationBuilder.build())
     }
 
     // UI-related
+    // Updates UI with counter values, power, name and progressbar
     private fun updateUI() {
         if (mAuth.currentUser?.displayName.isNullOrEmpty()) {
             usernameTextView.text = getString(R.string.anonymous)
@@ -546,7 +575,8 @@ class MainActivity : Activity(), SensorEventListener {
         stepCounter.text = prisoner.steps.toString()
     }
 
-    // Used in Remote Configuration
+    // Used in Remote Configuration,
+    // sets some elements text color with a dynamic value
     private fun applyTheme() {
         powerTextView.setTextColor(Color.parseColor(remoteConfig.getString("power_text_view_color")))
         stepsTextView.setTextColor(Color.parseColor(remoteConfig.getString("steps_text_view_color")))
@@ -554,20 +584,8 @@ class MainActivity : Activity(), SensorEventListener {
         sitUpsTextView.setTextColor(Color.parseColor(remoteConfig.getString("sit_ups_text_view_color")))
     }
 
-    private fun simpleEventButton(resourceId: Int, function: () -> Unit): Button {
-        return simpleEventButton(resources.getString(resourceId), function)
-    }
-
-    private fun simpleEventButton(text: String, function: () -> Unit): Button {
-        val button = Button(this)
-        button.text = text
-        button.setOnClickListener {
-            function()
-        }
-        return button
-    }
-
     // Geofence-related
+    // Builds the geofence with initial trigger on enter, adds current fence(s)
     private fun getGeofencingRequest(): GeofencingRequest {
         return GeofencingRequest.Builder().apply {
             setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
@@ -575,6 +593,7 @@ class MainActivity : Activity(), SensorEventListener {
         }.build()
     }
 
+    // The event for the geofence which starts the GeofenceTransitionIntentService
     private val geofencePendingIntent: PendingIntent by lazy {
         val intent = Intent(this, GeofenceTransitionsIntentService::class.java)
         PendingIntent.getService(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)

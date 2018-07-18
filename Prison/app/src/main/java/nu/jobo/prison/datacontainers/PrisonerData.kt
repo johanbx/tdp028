@@ -3,6 +3,7 @@ package nu.jobo.prison.datacontainers
 import com.google.firebase.database.IgnoreExtraProperties
 import java.io.Serializable
 
+// Is also saved to the firebase database
 @IgnoreExtraProperties
 data class PrisonerData (
         var power: Int,
