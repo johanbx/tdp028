@@ -113,6 +113,7 @@ class MainActivity : Activity(), SensorEventListener {
     lateinit var pushUpCounter: TextView
     lateinit var sitUpCounter: TextView
     lateinit var powerCounter: TextView
+
     lateinit var oldPrisoner: PrisonerData
 
     // "On" events

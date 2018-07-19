@@ -31,15 +31,18 @@ class GeofenceTransitionsIntentService : IntentService("GeofenceService") {
         const val TAG = "MY_GEOFENCE"
     }
 
+    // Applies language settings without a restart
     override fun onConfigurationChanged(newConfig: Configuration?) {
         super.onConfigurationChanged(newConfig)
         LocaleManager.setLocale(this)
     }
 
+    // Gives localmanager this context (used in languages)
     override fun attachBaseContext(newBase: Context?) {
         super.attachBaseContext(LocaleManager.setLocale(newBase!!))
     }
 
+    // Triggers on geofence events (works in the background)
     override fun onHandleIntent(intent: Intent?) {
         val geofencingEvent = GeofencingEvent.fromIntent(intent)
         if (geofencingEvent.hasError()) {
@@ -47,87 +50,61 @@ class GeofenceTransitionsIntentService : IntentService("GeofenceService") {
             return
         }
 
-        // Get the transition type.
         val geofenceTransition = geofencingEvent.geofenceTransition
 
-        // Test that the reported transition was of interest.
         if (geofenceTransition == Geofence.GEOFENCE_TRANSITION_ENTER ||
             geofenceTransition == Geofence.GEOFENCE_TRANSITION_EXIT) {
 
-            // Get the geofences that were triggered. A single event can trigger
-            // multiple geofences.
-            val triggeringGeofences = geofencingEvent.triggeringGeofences
-
             if (geofenceTransition == Geofence.GEOFENCE_TRANSITION_ENTER) {
-                sendNotification(getString(R.string.fence_notification_inside_title),
-                        getString(R.string.fence_notification_inside_message))
+                sendNotification(getString(R.string.fence_notification_inside_title), getString(R.string.fence_notification_inside_message))
             } else {
                 if (MainActivity.escaped) {
                     sendNotification(getString(R.string.won_the_game_not_title), getString(R.string.click_for_highscore), true)
                 } else {
+                    // Todo: Set "escaped" to false after some time. Right now this is never called.
                     sendNotification("You were captured by the guards",
                             "You were not fast enough")
                 }
             }
 
-            // Get the transition details as a String and log it.
+            // Since we only have one fence we do not need to worry about which
+            // fence that was activated. This is mainly for logging purposes.
+            val triggeringGeofences = geofencingEvent.triggeringGeofences
             val geofenceTransitionDetails = getGeofenceTransitionDetails(
                     geofenceTransition,
-                    triggeringGeofences
-            )
+                    triggeringGeofences)
             Log.i(TAG, geofenceTransitionDetails)
         } else {
-            // Log the error.
             Log.e(TAG, getString(R.string.geofence_transition_invalid_type))
         }
     }
 
-
-    /**
-     * Posts a notification in the notification bar when a transition is detected.
-     * If the user clicks the notification, control goes to the MainActivity.
-     */
+    // Notification which opens up mainactivity if the game was won
     private fun sendNotification(title: String, message: String, wonGame: Boolean = false) {
-        // Get an instance of the Notification manager
         val mNotificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
 
-        // Android O requires a Notification Channel.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val name = getString(R.string.app_name)
-            // Create the channel for the notification
             val mChannel = NotificationChannel(MainActivity.CHANNEL_ID, name, NotificationManager.IMPORTANCE_DEFAULT)
-
-            // Set the Notification Channel for the Notification Manager.
             mNotificationManager.createNotificationChannel(mChannel)
         }
 
         var notificationPendingIntent: PendingIntent? = null
         if (wonGame) {
+            // Send out intent that opens mainactivity if the game was won
             val notificationIntent = Intent(applicationContext, MainActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
                 putExtra(MainActivity.INTENT_WON_GAME, MainActivity.INTENT_WON_GAME)
             }
 
-            // Construct a task stack.
             val stackBuilder = TaskStackBuilder.create(this)
-
-            // Add the main Activity to the task stack as the parent.
             stackBuilder.addParentStack(MainActivity::class.java)
-
-            // Push the content Intent onto the stack.
             stackBuilder.addNextIntent(notificationIntent)
-
-            // Get a PendingIntent containing the entire back stack.
             notificationPendingIntent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT)
         }
 
-        // Get a notification builder that's compatible with platform versions >= 4
         val builder = NotificationCompat.Builder(this)
-
-        // Define the notification settings.
         builder.setSmallIcon(R.mipmap.ic_launcher)
-                // In a real app, you may want to use a library like Volley
-                // to decode the Bitmap.
                 .setContentTitle(title)
                 .setContentText(message)
 
@@ -135,18 +112,14 @@ class GeofenceTransitionsIntentService : IntentService("GeofenceService") {
             builder.setContentIntent(notificationPendingIntent)
         }
 
-        // Set the Channel ID for Android O.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            builder.setChannelId(MainActivity.CHANNEL_ID) // Channel ID
+            builder.setChannelId(MainActivity.CHANNEL_ID)
         }
 
-        // Dismiss notification once the user touches it.
-        // builder.setAutoCancel(true)
-
-        // Issue the notification
         mNotificationManager.notify(0, builder.build())
     }
 
+    // Used for logging
     private fun getGeofenceTransitionDetails(
             geofenceTransition: Int,
             triggeringGeofences: List<Geofence>): String {

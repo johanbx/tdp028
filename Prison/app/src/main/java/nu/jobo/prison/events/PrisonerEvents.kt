@@ -9,8 +9,24 @@ import java.util.*
 class PrisonerEvents(private val mainActivity: MainActivity) {
 
     // Source: https://stackoverflow.com/questions/45685026/how-can-i-get-a-random-number-in-kotlin
-    fun ClosedRange<Int>.random() =
-            Random().nextInt(endInclusive - start) +  start
+    fun ClosedRange<Int>.random() = Random().nextInt(endInclusive - start) +  start
+
+    // Power Handling
+    private fun powerRandomRangeIncrease(from: Int, to: Int) {
+        powerIncrease((from..to).random())
+    }
+
+    private fun powerIncrease(power: Int) {
+        mainActivity.prisoner.power = mainActivity.prisoner.power.plus(power)
+        mainActivity.powerCounter.text = mainActivity.prisoner.power.toString()
+        mainActivity.dbUpdate {  }
+    }
+
+    // Events
+    fun eventWon() {
+        mainActivity.statusImage.setImageResource(R.drawable.free)
+        mainActivity.setTitle(R.string.prisoner_status_free)
+    }
 
     private fun prisonerFailedEscape() {
         mainActivity.setTitle(R.string.prisoner_status_failed_escape)
@@ -30,21 +46,6 @@ class PrisonerEvents(private val mainActivity: MainActivity) {
             Toast.makeText(mainActivity.applicationContext,
                     "You have already escaped your cage", Toast.LENGTH_LONG).show()
         }
-    }
-
-    private fun powerRandomRangeIncrease(from: Int, to: Int) {
-        powerIncrease((from..to).random())
-    }
-
-    private fun powerIncrease(power: Int) {
-        mainActivity.prisoner.power = mainActivity.prisoner.power.plus(power)
-        mainActivity.powerCounter.text = mainActivity.prisoner.power.toString()
-        mainActivity.dbUpdate {  }
-    }
-
-    fun eventWon() {
-        mainActivity.statusImage.setImageResource(R.drawable.free)
-        mainActivity.setTitle(R.string.prisoner_status_free)
     }
 
     // Actions
